@@ -1,0 +1,10 @@
+apply plugin: 'application'
+
+mainClassName = 'et.naruto.HelloWorld'
+
+jar {
+    manifest {
+        attributes 'Main-Class':"$mainClassName"
+    }
+}
+

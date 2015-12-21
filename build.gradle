@@ -1,0 +1,46 @@
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse-wtp'
+    apply plugin: 'maven'
+    jar {
+        from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        compile 'log4j:log4j:1.2.17'
+        testCompile 'junit:junit:4.12'
+    }
+    install {
+        repositories.mavenInstaller {
+            pom {
+                project {
+                    packaging 'jar'
+                    name 'empty talk groups'
+                    licenses {
+                        license {
+                            name 'The Apache Software License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id 'schordingercat'
+                            name 'zhige.tang'
+                            email 'tangzhige@gmail.com'
+                        }
+                    }
+                    scm {
+                        connection 'http://schordingercat.github.com'
+                        developerConnection 'http://schordingercat.github.com'
+                        url 'http://schordingercat.github.com'
+                    }
+                }
+            }
+        }
+    }
+    tasks.withType(Compile) {
+        options.encoding = 'UTF-8'
+    }
+}
