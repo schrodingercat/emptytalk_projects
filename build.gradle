@@ -9,6 +9,8 @@ subprojects {
         mavenCentral()
     }
     dependencies {
+        compile 'org.apache.zookeeper:zookeeper:3.4.7'
+        //compile 'org.apache.curator:apache-curator:3.0.0'
         compile 'log4j:log4j:1.2.17'
         testCompile 'junit:junit:4.12'
     }
