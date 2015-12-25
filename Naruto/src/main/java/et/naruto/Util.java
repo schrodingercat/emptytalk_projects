@@ -2,9 +2,11 @@ package et.naruto;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggerFactory;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 
 public class Util {
     public static enum DIAG {
@@ -102,6 +104,34 @@ public class Util {
         }
         public void Error() {
             Assert(false, "");
+        }
+    }
+    public static void Sleep(long t) {
+        try {
+            Thread.sleep(t);
+        } catch (Exception e) {
+            DIAG.Get.d.pass_error("",e);
+        }
+    }
+    public static void ForceDeleteNode(ZooKeeper zk,String path) {
+        try {
+            List<String> childs=zk.getChildren(path,false);
+            for(String child:childs) {
+                ForceDeleteNode(zk,path+"/"+child);
+            }
+            zk.delete(path,-1);
+        } catch (Exception e) {
+            DIAG.Get.d.dig_error("",e);
+        }
+    }
+    public static void ForceCreateNode(ZooKeeper zk,String path,String data) {
+        ForceCreateNode(zk,path,data,false);
+    }
+    public static void ForceCreateNode(ZooKeeper zk,String path,String data,boolean persist) {
+        try {
+            zk.create(path,data.getBytes(),Ids.OPEN_ACL_UNSAFE,persist?CreateMode.PERSISTENT:CreateMode.EPHEMERAL);
+        } catch (Exception e) {
+            DIAG.Get.d.dig_error("",e);
         }
     }
 }
