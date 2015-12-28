@@ -113,6 +113,21 @@ public class Util {
             DIAG.Get.d.pass_error("",e);
         }
     }
+    public static class ZKArgs {
+        public final String connectString;
+        public final long sessionTimeout=10*1000;
+        public ZKArgs(final String connectString) {
+            this.connectString=connectString;
+        }
+        public ZooKeeper Create() {
+            try {
+                return new ZooKeeper("localhost:2181",10*1000,null);
+            } catch (Exception e) {
+                DIAG.Get.d.pass_error("",e);
+                return null;
+            }
+        }
+    }
     public static void ForceDeleteNode(ZooKeeper zk,String path) {
         try {
             List<String> childs=zk.getChildren(path,false);

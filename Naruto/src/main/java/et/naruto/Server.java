@@ -4,6 +4,8 @@ import java.nio.file.Paths;
 
 import org.apache.zookeeper.CreateMode;
 
+import et.naruto.Util.ZKArgs;
+
 public class Server {
     @Override
     public String toString() {
@@ -44,9 +46,9 @@ public class Server {
     private final ValueRegister leader_flag_register;
     private String leader_server_id="";
     
-    public Server(final Args args) {
+    public Server(final Args args,final ZKArgs zkargs) {
         this.args=args;
-        this.zkprocess=new ZKProcess(args.GetServerId()) {
+        this.zkprocess=new ZKProcess(args.GetServerId(),zkargs) {
             public void DoRun() {
                 MyServer_DoRun();
             }
