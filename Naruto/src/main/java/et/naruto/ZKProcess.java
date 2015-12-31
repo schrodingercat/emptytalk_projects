@@ -2,9 +2,8 @@ package et.naruto;
 
 import java.util.HashSet;
 import java.util.Timer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
 import et.naruto.Util.DIAG;
@@ -15,15 +14,16 @@ public class ZKProcess extends Thread {
     public final Timer tm;
     private final HashSet<Processer> processers=new HashSet();
     private boolean running=false;
+    private AtomicBoolean ticked=new AtomicBoolean(false);
     public ZKProcess(final String name,final ZKArgs zkargs) {
         super("zkprocess:"+name);
         this.tm=new Timer();
         this.zk=zkargs.Create();
     }
-    public void AddProcesser(final Processer processer) {
+    protected void AddProcesser(final Processer processer) {
         this.processers.add(processer);
     }
-    public void DelProcesser(final Processer processer) {
+    protected void DelProcesser(final Processer processer) {
         this.processers.remove(processer);
     }
     public void Close() {
@@ -61,7 +61,7 @@ public class ZKProcess extends Thread {
         while(true) {
             boolean changed=false;
             for(Processer processer:processers) {
-                if(processer.Tick(this)) {
+                if(processer.Do()) {
                     changed=true;
                 }
             }
@@ -69,10 +69,25 @@ public class ZKProcess extends Thread {
             if(!running) {
                 break;
             }
-            if(!changed) {
-                Util.Sleep(1000);
-            } else {
-                Util.Sleep(1000);
+            
+            if(!ticked.getAndSet(false)) {
+                synchronized(this) {
+                    if(!ticked.getAndSet(false)) {
+                        try {
+                            this.wait(200);
+                        } catch (Exception e) {
+                            DIAG.Get.d.pass_error("",e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    public void Tick() {
+        if(ticked.getAndSet(true)) {
+        } else {
+            synchronized(this) {
+                this.notify();
             }
         }
     }

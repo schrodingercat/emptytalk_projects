@@ -1,62 +1,46 @@
 package et.naruto;
 
-class Flow {
-    private long tri=0;
-    private long doing=0;
-    private long done=0;
-    private long fetch=0;
-    public Flow(long tri) {
-        this.tri=tri;
-    }
-    public void AddTri() {
-        tri++;
-    }
-    public boolean NeedDoing() {
-        long t_in=tri;
-        if(t_in>doing) {
-            doing=t_in;
-            return true;
-        }
-        return false;
-    }
-    public void Done() {
-        done=doing;
-    }
-    public boolean NeedFetch() {
-        long t_done=done;
-        if(t_done>fetch) {
-            fetch=t_done;
-            return true;
-        }
-        return false;
-    }
-}
+import java.util.concurrent.atomic.AtomicLong;
+
 
 public abstract class Processer<REQ,RET> {
-    private final Flow flow=new Flow(0);
-    public final REQ request;
-    public volatile RET result=null;
-    public abstract boolean Tick(final ZKProcess zk);
-    public Processer(REQ req) {
-        this.request=req;
+    private final Flow<REQ,RET> flow;
+    protected final ZKProcess zkprocess;
+    public Processer(final ZKProcess zkprocess,final REQ req) {
+        this.zkprocess=zkprocess;
+        this.flow=new Flow(req);
+        
+        this.zkprocess.AddProcesser(this);
     }
-    public void ReRequest() {
-        this.flow.AddTri();
+    public void Close() {
+        this.zkprocess.DelProcesser(this);
     }
-    public REQ Do() {
-        if(flow.NeedDoing()) {
-            return request;
+    public final REQ request() {
+        return this.flow.request;
+    }
+    public final RET result() {
+        return this.flow.result;
+    }
+    public final RET Fetch() {
+        return this.flow.Fetch();
+    }
+    
+    protected final void ReRequest() {
+        this.flow.AddIn();
+        this.zkprocess.Tick();
+    }
+    protected final boolean Do() {
+        REQ req=flow.NeedDoing();
+        if(req!=null) {
+            return DoDo(req);
         }
-        return null;
+        return false;
     }
-    public void Done(final RET ret) {
-        result=ret;
-        flow.Done();
+    protected final void Done(final RET ret) {
+        flow.Out(ret);
+        this.zkprocess.Tick();
     }
-    public RET Fetch() {
-        if(flow.NeedFetch()) {
-            return result;
-        }
-        return null;
-    }
+    
+    public abstract boolean DoDo(final REQ req);
+    
 }

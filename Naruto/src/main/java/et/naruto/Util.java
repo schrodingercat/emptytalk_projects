@@ -3,6 +3,7 @@ package et.naruto;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.TreeSet;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -141,6 +142,22 @@ public class Util {
     }
     public static void ForceCreateNode(ZooKeeper zk,String path,String data) {
         ForceCreateNode(zk,path,data,false);
+    }
+    public static String GetNodeData(ZooKeeper zk,String path) {
+        try {
+            return new String(zk.getData(path,false,null),"UTF-8");
+        } catch (Exception e) {
+            DIAG.Get.d.dig_error("",e);
+            return null;
+        }
+    }
+    public static TreeSet<String> GetNodeChilds(ZooKeeper zk,String path) {
+        try {
+            return new TreeSet(zk.getChildren(path,false));
+        } catch (Exception e) {
+            DIAG.Get.d.dig_error("",e);
+            return null;
+        }
     }
     public static void ForceCreateNode(ZooKeeper zk,String path,String data,boolean persist) {
         try {
