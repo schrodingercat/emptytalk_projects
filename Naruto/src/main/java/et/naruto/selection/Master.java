@@ -1,4 +1,4 @@
-package selection;
+package et.naruto.selection;
 
 import org.apache.zookeeper.CreateMode;
 

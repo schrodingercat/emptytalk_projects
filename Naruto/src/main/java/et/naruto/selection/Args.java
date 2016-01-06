@@ -1,4 +1,4 @@
-package selection;
+package et.naruto.selection;
 
 import java.nio.file.Paths;
 

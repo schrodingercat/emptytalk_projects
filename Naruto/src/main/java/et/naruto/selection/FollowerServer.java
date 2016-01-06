@@ -1,4 +1,4 @@
-package selection;
+package et.naruto.selection;
 
 import et.naruto.base.Util.ZKArgs;
 import et.naruto.process.ZKProcess;

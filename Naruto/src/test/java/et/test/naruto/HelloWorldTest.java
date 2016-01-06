@@ -11,9 +11,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import selection.Args;
-import selection.Server;
-
 import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
 import et.naruto.base.Util.ZKArgs;
@@ -21,6 +18,8 @@ import et.naruto.process.ChildsFetcher;
 import et.naruto.process.ValueFetcher;
 import et.naruto.process.ValueRegister;
 import et.naruto.process.ZKProcess;
+import et.naruto.selection.Args;
+import et.naruto.selection.Server;
 
 
 
