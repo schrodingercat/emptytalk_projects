@@ -1,4 +1,4 @@
-package et.naruto;
+package et.naruto.base;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -8,6 +8,7 @@ import java.util.TreeSet;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
+import org.jboss.netty.util.internal.StringUtil;
 
 public class Util {
     public static enum DIAG {
@@ -53,8 +54,8 @@ public class Util {
             return String.format(
                 "%s[VER=%s][TID=%s][CLS=%s]",
                 msg.replaceAll("\n","<[n]>"),
-                Thread.currentThread().getId(),
                 version,
+                Thread.currentThread().getId(),
                 GetParentStackClass()
             );
         }
@@ -165,5 +166,11 @@ public class Util {
         } catch (Exception e) {
             DIAG.Get.d.dig_error("",e);
         }
+    }
+    public static String Long2String(final long value) {
+        return String.format("%08x",value);
+    }
+    public static long String2Long(final String value) {
+        return Long.valueOf(value,16);
     }
 }

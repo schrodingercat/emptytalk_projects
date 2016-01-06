@@ -1,4 +1,4 @@
-package et.naruto;
+package et.naruto.process;
 
 import java.util.HashSet;
 import java.util.Timer;
@@ -6,8 +6,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.zookeeper.ZooKeeper;
 
-import et.naruto.Util.DIAG;
-import et.naruto.Util.ZKArgs;
+import et.naruto.base.Util;
+import et.naruto.base.Util.DIAG;
+import et.naruto.base.Util.ZKArgs;
 
 public class ZKProcess extends Thread {
     public final ZooKeeper zk;

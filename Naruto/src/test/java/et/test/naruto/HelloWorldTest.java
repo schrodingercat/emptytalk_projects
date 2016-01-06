@@ -11,15 +11,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import et.naruto.Args;
-import et.naruto.ChildsFetcher;
-import et.naruto.Server;
-import et.naruto.Util;
-import et.naruto.Util.DIAG;
-import et.naruto.Util.ZKArgs;
-import et.naruto.ValueFetcher;
-import et.naruto.ValueRegister;
-import et.naruto.ZKProcess;
+import selection.Args;
+import selection.Server;
+
+import et.naruto.base.Util;
+import et.naruto.base.Util.DIAG;
+import et.naruto.base.Util.ZKArgs;
+import et.naruto.process.ChildsFetcher;
+import et.naruto.process.ValueFetcher;
+import et.naruto.process.ValueRegister;
+import et.naruto.process.ZKProcess;
 
 
 
@@ -90,27 +91,29 @@ public class HelloWorldTest {
     public void ServerTest() {
         Util.ForceCreateNode(zk,base_path,"server_test",true);
         ArrayList<Server> ss=new ArrayList();
-        for(int i=0;i<30;i++) {
+        long length=30;
+        for(int i=0;i<length;i++) {
             ss.add(new Server(new Args(base_path,"floor4:localhost", "server"+i),zkargs));
         }
         for(Server s:ss) {
             s.Start();
         }
-        Util.Sleep(3*1000);
+        Util.Sleep(500);
         String resolutions_data=Util.GetNodeData(zk,base_path+"/Resolutions");
         Assert.assertTrue(!resolutions_data.isEmpty());
+        int pure_pre_leader_count=0;
         while(true) {
-            Util.Sleep(3*1000);
+            Util.Sleep(500);
             int pre_leader_count=0;
             int leader_count=0;
             Server pre_leader=null;
             Server leader=null;
             for(Server s:ss) {
-                if((s.is_pre_leader_out.result!=null)&&s.is_pre_leader_out.result) {
+                if(s.master.IsPreLeader()) {
                     pre_leader_count++;
                     pre_leader=s;
                 }
-                if(s.is_leader_out.result!=null&&s.is_leader_out.result) {
+                if(s.master.IsLeader()) {
                     leader_count++;
                     leader=s;
                 }
@@ -129,6 +132,9 @@ public class HelloWorldTest {
                     }
                     DIAG.Get.d.info(String.format("Stop the pre_leader server: %s", pre_leader));
                     pre_leader.Stop();
+                    if(!pre_leader.master.IsLeader()) {
+                         pure_pre_leader_count++;
+                    }
                     ss.remove(pre_leader);
                 }
             } else {
@@ -142,8 +148,8 @@ public class HelloWorldTest {
                 break;
             }
         }
-        Assert.assertTrue(Util.GetNodeChilds(zk,base_path+"/Resolutions").size()==30);
-        Assert.assertTrue(Util.GetNodeChilds(zk,base_path+"/ResolutionsClosed").size()==29);
+        Assert.assertTrue(Util.GetNodeChilds(zk,base_path+"/Resolutions").size()==(length-pure_pre_leader_count));
+        Assert.assertTrue(Util.GetNodeChilds(zk,base_path+"/ResolutionsClosed").size()==(length-1-pure_pre_leader_count));
     }
     @Test
     public void getHelloWorld_ShouldPrintHelloWorld() {

@@ -1,4 +1,4 @@
-package et.naruto;
+package et.naruto.process;
 
 import java.nio.file.Paths;
 import java.util.TimerTask;
@@ -8,7 +8,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
 
-import et.naruto.Util.DIAG;
+import et.naruto.base.Util.DIAG;
 
 public class ValueFetcher extends Processer<String,ValueFetcher.Result> {
     public class Result {
@@ -31,6 +31,18 @@ public class ValueFetcher extends Processer<String,ValueFetcher.Result> {
     }
     public ValueFetcher(final ZKProcess zkprocess,final String name) {
         this(zkprocess,name,true);
+    }
+    public final String toString() {
+        final Result re=this.result();
+        if(re!=null) {
+            if(re.data!=null) {
+                return String.format("VF(name=%s,size=0)",this.name);
+            } else {
+                return String.format("VF(name=%s,size=%s)",this.name,re.data.length);
+            }
+        } else {
+            return String.format("VF(name=%s,null)",this.name);
+        }
     }
     public boolean DoDo(final String req) {
         final ValueFetcher value_fetcher_ref=this;

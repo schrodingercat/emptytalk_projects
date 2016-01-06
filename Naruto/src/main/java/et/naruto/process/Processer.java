@@ -1,6 +1,9 @@
-package et.naruto;
+package et.naruto.process;
 
 import java.util.concurrent.atomic.AtomicLong;
+
+import et.naruto.versioner.Flow;
+import et.naruto.versioner.Handler;
 
 
 public abstract class Processer<REQ,RET> {
@@ -19,13 +22,16 @@ public abstract class Processer<REQ,RET> {
         return this.flow.request;
     }
     public final RET result() {
-        return this.flow.result;
+        return this.flow.result();
     }
-    public final RET Fetch() {
+    public final Handler<RET> handler() {
+        return flow.handler;
+    }
+    /*public final RET Fetch() {
         return this.flow.Fetch();
-    }
+    }*/
     
-    protected final void ReRequest() {
+    public final void ReRequest() {
         this.flow.AddIn();
         this.zkprocess.Tick();
     }

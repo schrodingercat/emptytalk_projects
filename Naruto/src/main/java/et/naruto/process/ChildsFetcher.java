@@ -1,4 +1,4 @@
-package et.naruto;
+package et.naruto.process;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +8,7 @@ import java.util.TreeSet;
 import org.apache.zookeeper.AsyncCallback.ChildrenCallback;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+
 
 public class ChildsFetcher extends Processer<String,ChildsFetcher.Result> {
     public static class Result {
@@ -21,6 +22,26 @@ public class ChildsFetcher extends Processer<String,ChildsFetcher.Result> {
     public ChildsFetcher(final ZKProcess zkprocess,final String name) {
         super(zkprocess,name);
         super.ReRequest();
+    }
+    public final String toString() {
+        final Result re=this.result();
+        if(re!=null) {
+            if(!re.exist) {
+                return "CF(no exist)";
+            } else {
+                if(re.childs.size()>0) {
+                    if(re.childs.size()>1) {
+                        return String.format("CF(%s,...,%s)",re.childs.first(),re.childs.last());
+                    } else {
+                        return String.format("CF(%s)",re.childs.first());
+                    }
+                } else {
+                    return "CF(empty)";
+                }
+            }
+        } else {
+            return "CF(null)";
+        }
     }
     public boolean DoDo(final String req) {
         final ChildsFetcher childs_fetcher_ref=this;

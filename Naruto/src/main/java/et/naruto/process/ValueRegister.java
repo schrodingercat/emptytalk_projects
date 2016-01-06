@@ -1,10 +1,11 @@
-package et.naruto;
+package et.naruto.process;
 
 import java.nio.file.Paths;
 
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
+
 
 public class ValueRegister extends Processer<ValueRegister.Request,Boolean> {
     public static class Request {
@@ -22,6 +23,9 @@ public class ValueRegister extends Processer<ValueRegister.Request,Boolean> {
         public String GetRegisterName() {
             return Paths.get(this.name).getFileName().toString();
         }
+    }
+    public String toString() {
+        return String.format("VR[name=%s]",this.request().GetRegisterName());
     }
     public ValueRegister(final ZKProcess zkprocess,final Request req) {
         super(zkprocess,req);
