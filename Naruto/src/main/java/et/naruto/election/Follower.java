@@ -1,4 +1,4 @@
-package et.naruto.selection;
+package et.naruto.election;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;

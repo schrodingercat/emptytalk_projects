@@ -14,12 +14,12 @@ import org.junit.Test;
 import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
 import et.naruto.base.Util.ZKArgs;
+import et.naruto.election.Args;
+import et.naruto.election.Server;
 import et.naruto.process.ChildsFetcher;
 import et.naruto.process.ValueFetcher;
 import et.naruto.process.ValueRegister;
 import et.naruto.process.ZKProcess;
-import et.naruto.selection.Args;
-import et.naruto.selection.Server;
 
 
 
