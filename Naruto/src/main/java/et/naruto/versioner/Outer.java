@@ -2,7 +2,7 @@ package et.naruto.versioner;
 
 
 public class Outer<RET> {
-    public final Handler<RET> in;
+    private final Handler<RET> in;
     private final Versioner out;
     public Outer(final Outer outer) {
         this.in=new Handler(outer.in);
@@ -13,7 +13,10 @@ public class Outer<RET> {
         this.out=new Versioner();
     }
     public final String toString() {
-        return String.format("Outer(in=%s,out=%s,ret=%s)",in.versioner.version(),out.version(),in.result);
+        return String.format("Outer(in=%s,out=%s,ret=%s)",in.version(),out.version(),in.result());
+    }
+    public final RET result() {
+        return this.in.result();
     }
     public final void Add(RET ret) {
         in.Add(ret);

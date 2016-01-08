@@ -4,10 +4,23 @@ import java.nio.file.Paths;
 
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 
-public class ValueRegister extends Processer<ValueRegister.Request,Boolean> {
+public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegister.Result> {
+    public static class Result {
+        public final Boolean succ;
+        public Result(final Boolean succ) {
+            this.succ=succ;
+        }
+        public boolean ok() {
+            if(succ!=null) {
+                return succ;
+            }
+            return false;
+        }
+    }
     public static class Request {
         public final String name;
         public final byte[] want_value;
@@ -41,11 +54,14 @@ public class ValueRegister extends Processer<ValueRegister.Request,Boolean> {
             new StringCallback() {
                 public void processResult(int rc, String path, Object ctx, String name) {
                     switch(rc) {
-                    case 0:
-                        value_register_ref.Done(true);
+                    case KeeperException.Code.Ok:
+                        value_register_ref.Done(new Result(true));
+                        break;
+                    case KeeperException.Code.NodeExists:
+                        value_register_ref.Done(new Result(false));
                         break;
                     default:
-                        value_register_ref.Done(false);
+                        value_register_ref.Done(new Result(null));
                         break;
                     }
                 }

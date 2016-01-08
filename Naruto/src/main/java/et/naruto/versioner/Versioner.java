@@ -1,18 +1,10 @@
 package et.naruto.versioner;
 
-public class Versioner {
-    private volatile long version;
+public class Versioner extends Versionable {
     public Versioner() {
-        this.version=0;
     }
     public Versioner(final Versioner versioner) {
-        this.version=versioner.version;
-    }
-    public final String toString() {
-        return String.format("Versioner(%s)",version);
-    }
-    public final long version() {
-        return this.version;
+        super(versioner);
     }
     public void Add() {
         this.version++;
@@ -21,9 +13,12 @@ public class Versioner {
             i++;
         }
     }
-    public boolean Watch(final Versioner... versioners) {
+    public static interface IWatch {
+        public void Do();
+    }
+    public boolean Watch(final IWatch watch,final Versionable... versionables) {
         long t_version=0;
-        for(Versioner v:versioners) {
+        for(Versionable v:versionables) {
             if(v!=null) {
                 t_version+=v.version;
             }
@@ -32,6 +27,9 @@ public class Versioner {
             if(t_version>1000) {
                 int i=0;
                 i++;
+            }
+            if(watch!=null) {
+                watch.Do();
             }
             this.version=t_version;
             return true;

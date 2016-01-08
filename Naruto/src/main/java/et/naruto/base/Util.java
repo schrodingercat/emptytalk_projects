@@ -2,13 +2,13 @@ package et.naruto.base;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.TreeSet;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
-import org.jboss.netty.util.internal.StringUtil;
 
 public class Util {
     public static enum DIAG {
@@ -172,5 +172,16 @@ public class Util {
     }
     public static long String2Long(final String value) {
         return Long.valueOf(value,16);
+    }
+    public static String Bytes2String(final byte[] data) {
+        try {
+            return new String(data,"UTF-8");
+        } catch (Exception e) {
+            DIAG.Get.d.pass_error("",e);
+            return null;
+        }
+    }
+    public static String GetPathName(String path) {
+        return Paths.get(path).getFileName().toString();
     }
 }

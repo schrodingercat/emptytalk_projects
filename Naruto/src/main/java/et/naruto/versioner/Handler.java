@@ -1,9 +1,11 @@
 package et.naruto.versioner;
 
+import et.naruto.versioner.Versioner.IWatch;
+
 
 public class Handler<RET> {
-    public final Versioner versioner;
-    public volatile RET result=null;
+    private final Versioner versioner;
+    private volatile RET result=null;
     public Handler() {
         this.versioner=new Versioner();
     }
@@ -14,13 +16,29 @@ public class Handler<RET> {
     public final String toString() {
         return String.format("Handler(%s,ret=%s)",versioner.version(),result);
     }
+    public final Versionable versionable() {
+        return this.versioner;
+    }
+    public final long version() {
+        return this.versioner.version();
+    }
+    public final RET result() {
+        return this.result;
+    }
     public final void Add(final RET ret) {
         this.result=ret;
         this.versioner.Add();
     }
-    public final boolean Assign(final RET ret,final Versioner versioner) {
-        if(this.versioner.Watch(versioner)) {
-            this.result=ret;
+    public final boolean Assign(final RET ret,final Versionable versionable) {
+        final Handler<RET> handler_ref=this;
+        if(this.versioner.Watch(
+            new IWatch(){
+                public void Do() {
+                    handler_ref.result=ret;
+                }
+            },
+            versionable
+        )) {
             return true;
         }
         return false;
@@ -31,23 +49,8 @@ public class Handler<RET> {
         }
         return null;
     }
-    public static interface IMap<SRC,RET> {
-        public RET map(final SRC src);
-        public void close(final RET ret);
-    }
-    public final <SRC> boolean Map(final IMap<SRC,RET> map,final Handler<SRC> handler) {
-        if(this.versioner.Watch(handler.versioner)) {
-            map.close(this.result);
-            RET temp=map.map(handler.result);
-            if(temp!=null) {
-                this.result=temp;
-                return true;
-            }
-        }
-        return false;
-    }
     public final RET Output(final Versioner versioner) {
-        if(versioner.Watch(this.versioner)) {
+        if(versioner.Watch(null,this.versioner)) {
             return this.result;
         }
         return null;

@@ -10,7 +10,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 
 
-public class ChildsFetcher extends Processer<String,ChildsFetcher.Result> {
+public class ChildsFetcher extends ZKProcesser<String,ChildsFetcher.Result> {
     public static class Result {
         public final TreeSet<String> childs;
         public final boolean exist;

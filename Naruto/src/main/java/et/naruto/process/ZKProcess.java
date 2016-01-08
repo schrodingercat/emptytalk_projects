@@ -21,11 +21,13 @@ public class ZKProcess extends Thread {
         this.tm=new Timer();
         this.zk=zkargs.Create();
     }
-    protected void AddProcesser(final Processer processer) {
+    public void AddProcesser(final Processer processer) {
         this.processers.add(processer);
+        Tick();
     }
-    protected void DelProcesser(final Processer processer) {
+    public void DelProcesser(final Processer processer) {
         this.processers.remove(processer);
+        Tick();
     }
     public void Close() {
         Stop();
@@ -61,10 +63,13 @@ public class ZKProcess extends Thread {
         running=true;
         while(true) {
             boolean changed=false;
-            for(Processer processer:processers) {
+            for(Processer processer:processers.toArray(new Processer[0])) {
                 if(processer.Do()) {
                     changed=true;
                 }
+            }
+            if(changed) {
+                Tick();
             }
             DoRun();
             if(!running) {

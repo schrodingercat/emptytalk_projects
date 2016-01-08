@@ -3,15 +3,18 @@ package et.naruto.election;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 
-
 import et.naruto.base.Util;
 import et.naruto.process.ChildsFetcher;
 import et.naruto.process.ValueFetcher;
 import et.naruto.process.ZKProcess;
+import et.naruto.versioner.Dealer;
 import et.naruto.versioner.Handler;
 import et.naruto.versioner.Versioner;
 
 class Resolution {
+    public final String toString() {
+        return String.format("Resolution(seq=%s,data=%s,closed=%s)", seq,data==null?null:data.length,closed);
+    }
     public final String name;
     public final long seq;
     public final byte[] data;
@@ -25,21 +28,20 @@ class Resolution {
 }
 
 class CurrentResolution {
-    public Versioner watcher=new Versioner();
-    public Handler<Resolution> out=new Handler();
+    public final Dealer<Resolution> dealer=new Dealer();
     public boolean Done(
             final Handler<ChildsFetcher.Result> resolutions_fetcher,
             final Handler<ChildsFetcher.Result> resolutions_closed_fetcher,
             final ValueFetcher current_resolution_fetcher) {
-        if(watcher.Watch(
-                resolutions_fetcher.versioner,
-                resolutions_closed_fetcher.versioner,
-                current_resolution_fetcher==null?null:current_resolution_fetcher.handler().versioner)) {
-            if(resolutions_fetcher.result!=null) {
-                if(resolutions_closed_fetcher.result!=null) {
-                    if(resolutions_fetcher.result.childs.size()>0) {
-                        String last=resolutions_fetcher.result.childs.last();
-                        boolean closed=resolutions_closed_fetcher.result.childs.contains(last);
+        if(this.dealer.Watch(
+                resolutions_fetcher.versionable(),
+                resolutions_closed_fetcher.versionable(),
+                current_resolution_fetcher==null?null:current_resolution_fetcher.handler().versionable())) {
+            if(resolutions_fetcher.result()!=null) {
+                if(resolutions_closed_fetcher.result()!=null) {
+                    if(resolutions_fetcher.result().childs.size()>0) {
+                        String last=resolutions_fetcher.result().childs.last();
+                        boolean closed=resolutions_closed_fetcher.result().childs.contains(last);
                         byte[] data=null;
                         if(current_resolution_fetcher!=null) {
                             if(current_resolution_fetcher.name.equals(last)) {
@@ -48,9 +50,9 @@ class CurrentResolution {
                                 }
                             }
                         }
-                        out.Assign(new Resolution(last,data,closed),watcher);
+                        this.dealer.Done(new Resolution(last,data,closed));
                     } else {
-                        out.Assign(new Resolution("-1",new byte[0],true),watcher);
+                        this.dealer.Done(new Resolution("-1",new byte[0],true));
                     }
                     return true;
                 }
@@ -77,28 +79,6 @@ public class Follower {
     public final ValueFetcher leader_flag_fetcher;
     public final CurrentResolution resolution_out=new CurrentResolution();
     
-    private Resolution GetCurrentResolution() {
-        if(resolutions_fetcher.result()!=null) {
-            if(resolutions_closed_fetcher.result()!=null) {
-                if(resolutions_fetcher.result().childs.size()>0) {
-                    String last=resolutions_fetcher.result().childs.last();
-                    boolean closed=resolutions_closed_fetcher.result().childs.contains(last);
-                    byte[] data=null;
-                    if(current_resolution_fetcher!=null) {
-                        if(current_resolution_fetcher.name.equals(last)) {
-                            if(current_resolution_fetcher.result()!=null) {
-                                data=current_resolution_fetcher.result().data;
-                            }
-                        }
-                    }
-                    return new Resolution(last,data,closed);
-                } else {
-                    return new Resolution("-1",null,true);
-                }
-            }
-        }
-        return null;
-    }
     public Follower(final Args args,final ZKProcess zkprocess) {
         this.args=args;
         this.zkprocess=zkprocess;

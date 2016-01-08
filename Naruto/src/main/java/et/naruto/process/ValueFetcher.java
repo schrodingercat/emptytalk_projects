@@ -10,7 +10,7 @@ import org.apache.zookeeper.data.Stat;
 
 import et.naruto.base.Util.DIAG;
 
-public class ValueFetcher extends Processer<String,ValueFetcher.Result> {
+public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
     public class Result {
         public final byte[] data;
         public final String value;

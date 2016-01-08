@@ -1,8 +1,7 @@
 package et.test.naruto;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.ArrayList;
+import java.util.TreeSet;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooKeeper;
@@ -17,9 +16,15 @@ import et.naruto.base.Util.ZKArgs;
 import et.naruto.election.Args;
 import et.naruto.election.Server;
 import et.naruto.process.ChildsFetcher;
+import et.naruto.process.NodeFetcher;
 import et.naruto.process.ValueFetcher;
 import et.naruto.process.ValueRegister;
 import et.naruto.process.ZKProcess;
+import et.naruto.register.RegistersClient;
+import et.naruto.register.RegistersSync;
+import et.naruto.register.RegistersUpdater;
+
+
 
 
 
@@ -27,6 +32,9 @@ public class HelloWorldTest {
     public static ZKArgs zkargs=new ZKArgs("localhost:2181");
     public static String base_path="/naruto_test";
     public static ZooKeeper zk=zkargs.Create();
+    public static Args CreateArgs(final int seq) {
+        return new Args(base_path,"floor4:localhost", "server"+seq);
+    }
     @Before
     public void setUp() {
         Util.ForceDeleteNode(zk,base_path);
@@ -36,7 +44,22 @@ public class HelloWorldTest {
         Util.ForceDeleteNode(zk,base_path);
     }
     @Test
-    public void ZKProcessTestFetcher() {
+    public void testNodeFetcher() {
+        ZKProcess process=new ZKProcess("test",zkargs);
+        NodeFetcher nf=new NodeFetcher(process,base_path);
+        process.Start();
+        Util.ForceCreateNode(zk,base_path,"test",true);
+        Util.Sleep(3*1000);
+        Assert.assertTrue(nf.dealer.result().childs.size()==0);
+        Util.ForceCreateNode(process.zk,base_path+"/hello","ok",true);
+        Util.Sleep(3*1000);
+        Assert.assertTrue(nf.dealer.result().childs.size()==1);
+        Assert.assertTrue(nf.dealer.result().childs.first().equals("hello"));
+        process.Close();
+        nf.Close();
+    }
+    @Test
+    public void testValueFetcher() {
         ZKProcess process=new ZKProcess("test",zkargs);
         ValueFetcher vf=new ValueFetcher(process,base_path);
         process.Start();
@@ -51,7 +74,7 @@ public class HelloWorldTest {
         process.Close();
     }
     @Test
-    public void ZKProcessTestChildsFetcher() {
+    public void testChildsFetcher() {
         ZKProcess process=new ZKProcess("test",zkargs);
         ValueFetcher vf=new ValueFetcher(process,base_path);
         ChildsFetcher cf=new ChildsFetcher(process,base_path);
@@ -73,7 +96,7 @@ public class HelloWorldTest {
         process.Close();
     }
     @Test
-    public void ZKProcessTestRegister() {
+    public void testValueRegister() {
         ZKProcess process=new ZKProcess("test",zkargs);
         ValueFetcher vf=new ValueFetcher(process,base_path);
         Util.ForceDeleteNode(process.zk,base_path);
@@ -87,12 +110,58 @@ public class HelloWorldTest {
         Util.ForceDeleteNode(process.zk,base_path);
     }
     @Test
-    public void ServerTest() {
+    public void testRegistersSync() {
+        Util.ForceCreateNode(zk,base_path,"registers_sync_test",true);
+        ZKProcess process=new ZKProcess("test",zkargs);
+        RegistersSync nf=new RegistersSync(process,CreateArgs(0));
+        process.Start();
+        Util.Sleep(3*1000);
+        Assert.assertTrue(nf.dealer.result().name().equals("server0"));
+        Util.ForceCreateNode(zk,nf.dealer.result().active_fetcher.request(),"active_test",false);
+        Util.Sleep(3*1000);
+        Assert.assertTrue(nf.dealer.result().active_fetcher.result().value.equals("active_test"));
+        process.Close();
+        nf.Close();
+    }
+    @Test
+    public void testRegistersUpdater() {
+        Util.ForceCreateNode(zk,base_path,"registers_sync_test",true);
+        ZKProcess process=new ZKProcess("test",zkargs);
+        RegistersUpdater nf=new RegistersUpdater(process,CreateArgs(0));
+        process.Start();
+        Util.Sleep(3*1000);
+    }
+    
+    @Test
+    public void testRegistersClient() {
+        
+        final ArrayList<RegistersClient> ss=new ArrayList();
+        long length=1;
+        for(int i=0;i<length;i++) {
+            ss.add(new RegistersClient(CreateArgs(i),zkargs));
+        }
+        for(RegistersClient s:ss) {
+            s.Start();
+        }
+        
+        Util.Sleep(3000);
+        TreeSet<String> nodes=Util.GetNodeChilds(zk,this.base_path+"/Registers");
+        Assert.assertTrue(nodes.size()==1);
+        TreeSet<String> servers=Util.GetNodeChilds(zk,this.base_path+"/Registers/"+nodes.first());
+        Assert.assertTrue(servers.size()==length);
+        
+        for(RegistersClient s:ss) {
+            s.Stop();
+        }
+    }
+    
+    @Test
+    public void testElectionServer() {
         Util.ForceCreateNode(zk,base_path,"server_test",true);
-        ArrayList<Server> ss=new ArrayList();
+        final ArrayList<Server> ss=new ArrayList();
         long length=30;
         for(int i=0;i<length;i++) {
-            ss.add(new Server(new Args(base_path,"floor4:localhost", "server"+i),zkargs));
+            ss.add(new Server(CreateArgs(i),zkargs));
         }
         for(Server s:ss) {
             s.Start();
@@ -151,7 +220,7 @@ public class HelloWorldTest {
         Assert.assertTrue(Util.GetNodeChilds(zk,base_path+"/ResolutionsClosed").size()==(length-1-pure_pre_leader_count));
     }
     @Test
-    public void getHelloWorld_ShouldPrintHelloWorld() {
-        assertEquals("helloworld","helloworld");
+    public void RegisterTest() {
+        
     }
 }

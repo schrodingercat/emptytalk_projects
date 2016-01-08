@@ -29,6 +29,18 @@ public class Args {
     public String GetResolutionsClosedPath() {
         return Paths.get(cluster_path).resolve("ResolutionsClosed").toString();
     }
+    public String GetRegistersPath() {
+        return Paths.get(cluster_path).resolve("Registers").toString();
+    }
+    public String GetNodePath() {
+        return GetRegistersPath()+"/"+node_path;
+    }
+    public String GetServerPath() {
+        return GetNodePath()+"/"+server_num;
+    }
+    public String GetActivePath() {
+        return GetServerPath()+"/active";
+    }
     public String GetServerId() {
         return node_path+":"+server_num;
     }
