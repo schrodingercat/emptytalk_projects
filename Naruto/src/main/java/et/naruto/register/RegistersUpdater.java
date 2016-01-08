@@ -16,7 +16,6 @@ public class RegistersUpdater implements Processer {
     private class Checking extends TimerTask {
         public void run() {
             zkprocess.zk.setData(args.GetActivePath(),args.GetServerId().getBytes(),-1,null,null);
-            zkprocess.tm.schedule(this,1000*30);
         }
     }
     private final ZKProcess zkprocess;
@@ -139,6 +138,7 @@ public class RegistersUpdater implements Processer {
                             if(active_register.result().succ) {
                                 this.zkprocess.tm.schedule(
                                     new Checking(),
+                                    1000*30,
                                     1000*30
                                 );
                                 break;
