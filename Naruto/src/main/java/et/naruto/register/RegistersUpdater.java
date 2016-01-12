@@ -12,12 +12,13 @@ import et.naruto.process.ZKProcess;
 import et.naruto.versioner.Dealer;
 import et.naruto.versioner.Versioner;
 
-public class RegistersUpdater implements Processer {
+public abstract class RegistersUpdater implements Processer {
     private class Checking extends TimerTask {
         public void run() {
-            zkprocess.zk.setData(args.GetActivePath(),args.GetServerId().getBytes(),-1,null,null);
+            zkprocess.zk.setData(args.GetActivePath(),DoGetActiveInfo(),-1,null,null);
         }
     }
+    protected abstract byte[] DoGetActiveInfo();
     private final ZKProcess zkprocess;
     private final Args args;
     private final ValueRegister registers_register;
@@ -115,7 +116,7 @@ public class RegistersUpdater implements Processer {
                                 this.zkprocess,
                                 new ValueRegister.Request(
                                     args.GetActivePath(),
-                                    args.GetServerId(),
+                                    DoGetActiveInfo(),
                                     CreateMode.EPHEMERAL
                                 )
                             );

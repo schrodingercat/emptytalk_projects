@@ -43,7 +43,7 @@ public class HelloWorldTest {
     public void tearDown() {
         Util.ForceDeleteNode(zk,base_path);
     }
-    @Test
+    /*@Test
     public void testNodeFetcher() {
         ZKProcess process=new ZKProcess("test",zkargs);
         NodeFetcher nf=new NodeFetcher(process,base_path);
@@ -57,7 +57,7 @@ public class HelloWorldTest {
         Assert.assertTrue(nf.dealer.result().childs.first().equals("hello"));
         process.Close();
         nf.Close();
-    }
+    }*/
     @Test
     public void testValueFetcher() {
         ZKProcess process=new ZKProcess("test",zkargs);
@@ -123,25 +123,48 @@ public class HelloWorldTest {
         process.Close();
         nf.Close();
     }
+    private static int register_active_count=0;
     @Test
     public void testRegistersUpdater() {
         Util.ForceCreateNode(zk,base_path,"registers_sync_test",true);
         ZKProcess process=new ZKProcess("test",zkargs);
-        RegistersUpdater nf=new RegistersUpdater(process,CreateArgs(0));
+        Args args=CreateArgs(0);
+        RegistersUpdater nf=new RegistersUpdater(process,args) {
+            protected byte[] DoGetActiveInfo() {
+                return (""+(register_active_count++)).getBytes();
+            }
+        };
         process.Start();
-        Util.Sleep(3*1000);
+        Util.Sleep(3*1000+30*1000);
+        Assert.assertTrue(Integer.valueOf(Util.GetNodeData(zk,args.GetActivePath()),10)>0);
+        process.Close();
+        nf.Close();
     }
     
+    private static class RegistersClientTest {
+        public final Args args;
+        public final RegistersClient register_client;
+        public final RegistersUpdater register_updater;
+        public RegistersClientTest(final int i) {
+            this.args=HelloWorldTest.CreateArgs(i);
+            this.register_client=new RegistersClient(args,zkargs);
+            this.register_updater=new RegistersUpdater(this.register_client.zkprocess,args) {
+                protected byte[] DoGetActiveInfo() {
+                    return args.GetServerId().getBytes();
+                }
+            };
+        }
+    }
     @Test
     public void testRegistersClient() {
-        
-        final ArrayList<RegistersClient> ss=new ArrayList();
-        long length=1;
+        Util.ForceCreateNode(zk,base_path,"test_registers_client",true);
+        final ArrayList<RegistersClientTest> ss=new ArrayList();
+        long length=30;
         for(int i=0;i<length;i++) {
-            ss.add(new RegistersClient(CreateArgs(i),zkargs));
+            ss.add(new RegistersClientTest(i));
         }
-        for(RegistersClient s:ss) {
-            s.Start();
+        for(RegistersClientTest s:ss) {
+            s.register_client.Start();
         }
         
         Util.Sleep(3000);
@@ -150,8 +173,9 @@ public class HelloWorldTest {
         TreeSet<String> servers=Util.GetNodeChilds(zk,this.base_path+"/Registers/"+nodes.first());
         Assert.assertTrue(servers.size()==length);
         
-        for(RegistersClient s:ss) {
-            s.Stop();
+        for(RegistersClientTest s:ss) {
+            Assert.assertTrue(s.register_client.registers_sync.dealer.result().active_fetcher.result().value.equals(s.args.GetServerId()));
+            s.register_client.Stop();
         }
     }
     

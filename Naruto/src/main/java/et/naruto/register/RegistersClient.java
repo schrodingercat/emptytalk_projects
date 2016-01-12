@@ -11,8 +11,8 @@ public class RegistersClient {
     
     private final RegistersClient server_ref;
     protected final Args args;
-    protected final ZKProcess zkprocess;
-    private final RegistersSync registers_sync;
+    public final ZKProcess zkprocess;
+    public final RegistersSync registers_sync;
     
     public RegistersClient(final Args args,final ZKArgs zkargs) {
         this.server_ref=this;

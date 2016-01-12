@@ -2,12 +2,11 @@ package et.naruto.process;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.TreeSet;
 
-import et.naruto.election.Args;
 import et.naruto.versioner.Dealer;
+import et.naruto.versioner.Versionable;
 
 public abstract class NodeFetcherX<X extends NodeFetcherX.Target> implements Processer {
     public static interface Target {
@@ -15,14 +14,14 @@ public abstract class NodeFetcherX<X extends NodeFetcherX.Target> implements Pro
         public void Close();
     }
     private final ZKProcess zkprocess;
-    protected final NodeFetcher nodes_fetcher;
+    public final ChildsFetcher childs_fetcher;
     public NodeFetcherX(final ZKProcess zkprocess,final String path) {
         this.zkprocess=zkprocess;
-        this.nodes_fetcher=new NodeFetcher(zkprocess,path);
+        this.childs_fetcher=new ChildsFetcher(zkprocess,path);
         this.zkprocess.AddProcesser(this);
     }
     public void Close() {
-        nodes_fetcher.Close();
+        childs_fetcher.Close();
         if(dealer.result()!=null) {
             for(X x:dealer.result().values()) {
                 x.Close();
@@ -30,16 +29,19 @@ public abstract class NodeFetcherX<X extends NodeFetcherX.Target> implements Pro
         }
         this.zkprocess.DelProcesser(this);
     }
+    public final Versionable result_versionable() {
+        return dealer.result_versionable();
+    }
     
     public final Dealer<HashMap<String,X>> dealer=new Dealer();
     private ValueRegister registers_register=null;
     public boolean Do() {
         if(dealer.Watch(
-            this.nodes_fetcher.dealer.result_versionable()
+            this.childs_fetcher.result_versionable()
         )) {
-            if(this.nodes_fetcher.dealer.result()!=null) {
-                if(this.nodes_fetcher.dealer.result().childs!=null) {
-                    dealer.Done(MergeNodes(this.nodes_fetcher.dealer.result().childs));
+            if(this.childs_fetcher.result()!=null) {
+                if(this.childs_fetcher.result().childs!=null) {
+                    dealer.Done(MergeNodes(this.childs_fetcher.result().childs));
                 }
             }
             return true;

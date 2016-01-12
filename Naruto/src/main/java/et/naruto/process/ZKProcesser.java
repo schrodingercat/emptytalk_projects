@@ -2,6 +2,7 @@ package et.naruto.process;
 
 import et.naruto.versioner.Flow;
 import et.naruto.versioner.Handler;
+import et.naruto.versioner.Versionable;
 
 public abstract class ZKProcesser<REQ,RET> implements Processer {
     private final Flow<REQ,RET> flow;
@@ -20,6 +21,9 @@ public abstract class ZKProcesser<REQ,RET> implements Processer {
     }
     public final RET result() {
         return this.flow.result();
+    }
+    public final Versionable result_versionable() {
+        return flow.handler.versionable();
     }
     public final boolean doing() {
         return flow.doing();

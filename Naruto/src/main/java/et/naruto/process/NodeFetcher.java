@@ -30,7 +30,7 @@ public class NodeFetcher implements Processer {
         this.zkprocess.DelProcesser(this);
     }
     
-    public final Dealer<Result> dealer=new Dealer();
+    private final Dealer<Result> dealer=new Dealer();
     public final boolean Do() {
         if(dealer.Watch(
             childs_fetcher.handler().versionable()

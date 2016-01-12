@@ -7,6 +7,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
 
+import et.naruto.base.Util.DIAG;
+
 
 public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegister.Result> {
     public static class Result {
@@ -61,6 +63,7 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
                         value_register_ref.Done(new Result(false));
                         break;
                     default:
+                        DIAG.Get.d.error(path+" : "+KeeperException.create(rc).getMessage());
                         value_register_ref.Done(new Result(null));
                         break;
                     }

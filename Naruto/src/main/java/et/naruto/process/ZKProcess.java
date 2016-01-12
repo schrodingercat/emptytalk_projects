@@ -43,6 +43,7 @@ public class ZKProcess extends Thread {
     public void Stop() {
         if(running) {
             running=false;
+            this.Tick();
             try {
                 super.join();
             } catch (Exception e) {
