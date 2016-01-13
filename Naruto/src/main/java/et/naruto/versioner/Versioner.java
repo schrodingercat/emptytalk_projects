@@ -1,19 +1,31 @@
 package et.naruto.versioner;
 
-public class Versioner extends Versionable {
+public class Versioner {
+    private volatile Versionable versionable;
     public Versioner() {
+        this.versionable=new Versionable();
     }
     public Versioner(final Versioner versioner) {
-        super(versioner);
+        this.versionable=versioner.versionable;
     }
     public void Add() {
-        this.version++;
-        if(this.version>1000) {
-            int i=0;
-            i++;
-        }
+        this.versionable=this.versionable.Add();
     }
-    public static interface IWatch {
+    public boolean Watch(final Versionable... versionables) {
+        final Versionable v=this.versionable.Watch(versionables);
+        if(v!=null) {
+            this.versionable=v;
+            return true;
+        }
+        return false;
+    }
+    public final Versionable versionable() {
+        return this.versionable;
+    }
+    public final long version() {
+        return this.versionable.version;
+    }
+    /*public static interface IWatch {
         public void Do();
     }
     public boolean Watch(final IWatch watch,final Versionable... versionables) {
@@ -35,6 +47,6 @@ public class Versioner extends Versionable {
             return true;
         }
         return false;
-    }
+    }*/
 }
 

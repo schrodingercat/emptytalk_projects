@@ -13,6 +13,12 @@ public abstract class ZKProcesser<REQ,RET> implements Processer {
         
         this.zkprocess.AddProcesser(this);
     }
+    public ZKProcesser(final ZKProcess zkprocess,final ZKProcesser<REQ,RET> old,final REQ req) {
+        this.zkprocess=zkprocess;
+        this.flow=new Flow(old.flow,req);
+        
+        this.zkprocess.AddProcesser(this);
+    }
     public void Close() {
         this.zkprocess.DelProcesser(this);
     }

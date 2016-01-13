@@ -138,12 +138,14 @@ class LeaderCatch {
                             if(resolution_register_handler.result().seq==follower_resolution_handler.result().seq) {
                                 if(follower_resolution_handler.result().data!=null) {
                                     this.dealer.Done(new LeaderInfo(follower_resolution_handler.result().data));
+                                    DIAG.Get.d.info(String.format("%s leader catched",args.toString()));
                                     return true;
                                 }
                             }
                         }
                     }
                     this.dealer.Done(new LeaderInfo(null));
+                    DIAG.Get.d.info(String.format("%s preleader catched",args.toString()));
                     return true;
                 }
             }
@@ -164,10 +166,11 @@ abstract class ResolutionRegister {
     public final long seq;
     private final ZKProcess zkprocess;
     private final Args args;
-    public ResolutionRegister(final long seq,final ZKProcess zkprocess,final Args args) {
+    public ResolutionRegister(final long seq,final ZKProcess zkprocess,final Args args,final Dealer old) {
         this.seq=seq;
         this.zkprocess=zkprocess;
         this.args=args;
+        this.dealer=(old==null)?new Dealer():old;
     }
     public void Close() {
         if(this.closed!=null) {
@@ -178,7 +181,7 @@ abstract class ResolutionRegister {
         }
     }
     
-    public final Dealer<ValueRegister.Result> dealer=new Dealer();
+    public final Dealer<ValueRegister.Result> dealer;
     private Outer<Boolean> closeing=null;
     private ValueRegister closed=null;
     private Outer<byte[]> registing=null;
@@ -195,11 +198,13 @@ abstract class ResolutionRegister {
                 if(need_resolution.need_closed!=null) {
                     if(this.closeing==null) {
                         this.closeing=this.CloseResolution(this.seq-1,need_resolution.need_closed);
+                        DIAG.Get.d.debug(String.format("%s closeing %s resolution",args.toString(),seq));
                     }
                 }
                 if(need_resolution.need_registed!=null) {
                     if(this.registing==null) {
                         this.registing=this.NewResolution(seq,need_resolution.need_registed);
+                        DIAG.Get.d.debug(String.format("%s registing %s resolution",args.toString(),seq));
                     }
                 }
             }
@@ -210,6 +215,7 @@ abstract class ResolutionRegister {
             Boolean is_closeing=this.closeing.Out();
             if(is_closeing!=null) {
                 ValueClosed();
+                DIAG.Get.d.debug(String.format("%s closed %s resolution",args.toString(),seq));
                 next=true;
             }
         }
@@ -217,13 +223,15 @@ abstract class ResolutionRegister {
             byte[] new_bytes=this.registing.Out();
             if(new_bytes!=null) {
                 ValueRegisted(new_bytes);
+                DIAG.Get.d.debug(String.format("%s registed %s resolution",args.toString(),seq));
                 next=true;
             }
         }
         
         if(this.registed!=null) {
-            ValueRegister.Result result=this.dealer.handler.Sync(this.registed.handler());
+            ValueRegister.Result result=this.dealer.handler.Sync(this.registed.handler().handleable());
             if(result!=null) {
+                DIAG.Get.d.debug(String.format("%s output %s resolution",args.toString(),seq));
                 next=true;
             }
         }
@@ -244,7 +252,11 @@ abstract class ResolutionRegister {
                 args.GetServerId(),
                 CreateMode.PERSISTENT
             )
-        );
+        ) {
+            public void DoCallback(final Result result) {
+                DIAG.Get.d.debug(String.format("%s closed %s resolution callback",args.toString(),seq));
+            }
+        };
     }
     private void ValueRegisted(final byte[] data) {
         if(this.registed!=null) {
@@ -257,7 +269,11 @@ abstract class ResolutionRegister {
                 data,
                 CreateMode.PERSISTENT
             )
-        );
+        ) {
+            public void DoCallback(final Result result) {
+                DIAG.Get.d.debug(String.format("%s registed %s resolution callback",args.toString(),seq));
+            }
+        };
     }
 }
 
@@ -319,7 +335,7 @@ public abstract class Master {
                                 if(ret!=null) {
                                     ret.Close();
                                 }
-                                return new ResolutionRegister(src.seq,zkprocess,args) {
+                                return new ResolutionRegister(src.seq,zkprocess,args,ret==null?null:ret.dealer) {
                                     public Outer<Boolean> CloseResolution(long seq,byte[] data) {
                                         return master_ref.CloseResolution(seq,data);
                                     }

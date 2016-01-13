@@ -32,6 +32,12 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
     public ValueFetcher(final ZKProcess zkprocess,final String name) {
         this(zkprocess,name,true);
     }
+    public ValueFetcher(final ZKProcess zkprocess,final String path,final ValueFetcher old,final boolean need_watch) {
+        super(zkprocess,old,path);
+        super.ReRequest();
+        this.need_watch=need_watch;
+        this.name=Paths.get(path).getFileName().toString();
+    }
     public final String toString() {
         final Result re=this.result();
         if(re!=null) {
@@ -117,7 +123,12 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
             need_create=true;
         }
         if(need_create) {
-            ValueFetcher vf=new ValueFetcher(zkprocess,next,false);
+            ValueFetcher vf=null;
+            if(current!=null) {
+                vf=new ValueFetcher(zkprocess,next,current,false);
+            } else {
+                vf=new ValueFetcher(zkprocess,next,false);
+            }
             return vf;
         }
         return null;

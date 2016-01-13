@@ -5,8 +5,7 @@ import java.nio.file.Paths;
 public class Args {
     @Override
     public String toString() {
-        return "Args [cluster_path="+cluster_path+"," +
-            "node_path="+node_path+",server_num="+server_num+"]";
+        return String.format("Arg(c=%s,n=%s,s=%s)",cluster_path,node_path,server_num);
     }
     public Args(
         String cluster_path,

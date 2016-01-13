@@ -1,57 +1,52 @@
 package et.naruto.versioner;
 
-import et.naruto.versioner.Versioner.IWatch;
 
 
 public class Handler<RET> {
-    private final Versioner versioner;
-    private volatile RET result=null;
+    private volatile Handleable<RET> handleable;
     public Handler() {
-        this.versioner=new Versioner();
+        this.handleable=new Handleable();
     }
     public Handler(final Handler<RET> handler) {
-        this.versioner=new Versioner(handler.versioner);
-        this.result=handler.result;
+        this.handleable=handler.handleable;
     }
     public final String toString() {
-        return String.format("Handler(%s,ret=%s)",versioner.version(),result);
+        return String.format("Handler(%s,ret=%s)",handleable.versionable.version,handleable.result);
     }
     public final Versionable versionable() {
-        return this.versioner;
+        return handleable.versionable;
     }
     public final long version() {
-        return this.versioner.version();
+        return this.handleable.version();
     }
     public final RET result() {
-        return this.result;
+        return handleable.result;
+    }
+    public final Handleable<RET> handleable() {
+        return handleable;
     }
     public final void Add(final RET ret) {
-        this.result=ret;
-        this.versioner.Add();
+        this.handleable=Handleable.Add(ret,this.handleable.versionable);
     }
     public final boolean Assign(final RET ret,final Versionable versionable) {
-        final Handler<RET> handler_ref=this;
-        if(this.versioner.Watch(
-            new IWatch(){
-                public void Do() {
-                    handler_ref.result=ret;
-                }
-            },
-            versionable
-        )) {
+        Handleable h=Handleable.Watch(ret,this.handleable.versionable,versionable);
+        if(h!=null) {
+            this.handleable=h;
             return true;
         }
         return false;
     }
-    public final RET Sync(final Handler<RET> handler) {
-        if(Assign(handler.result,handler.versioner)) {
-            return handler.result;
+    public final RET Sync(final Handleable<RET> handleable) {
+        Handleable<RET> h=Handleable.Watch(this.handleable.versionable,handleable);
+        if(h!=null) {
+            this.handleable=h;
+            return h.result;
         }
         return null;
     }
     public final RET Output(final Versioner versioner) {
-        if(versioner.Watch(null,this.versioner)) {
-            return this.result;
+        if(versioner.Watch(this.handleable.versionable)) {
+            return this.handleable.result;
         }
         return null;
     }

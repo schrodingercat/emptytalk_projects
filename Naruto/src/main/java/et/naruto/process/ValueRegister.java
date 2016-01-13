@@ -46,6 +46,7 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
         super(zkprocess,req);
         super.ReRequest();
     }
+    public void DoCallback(final Result result) {}
     public boolean DoDo(final Request req) {
         final ValueRegister value_register_ref=this;
         zkprocess.zk.create(
@@ -55,18 +56,21 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
             req.mode,
             new StringCallback() {
                 public void processResult(int rc, String path, Object ctx, String name) {
+                    Result r=null;
                     switch(rc) {
                     case KeeperException.Code.Ok:
-                        value_register_ref.Done(new Result(true));
+                        r=new Result(true);
                         break;
                     case KeeperException.Code.NodeExists:
-                        value_register_ref.Done(new Result(false));
+                        r=new Result(false);
                         break;
                     default:
                         DIAG.Get.d.error(path+" : "+KeeperException.create(rc).getMessage());
-                        value_register_ref.Done(new Result(null));
+                        r=new Result(null);
                         break;
                     }
+                    value_register_ref.Done(r);
+                    DoCallback(r);
                 }
             },
             null

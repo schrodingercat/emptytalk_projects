@@ -1,10 +1,10 @@
 package et.naruto.register;
 
 import et.naruto.election.Args;
-import et.naruto.process.NodeFetcherX;
+import et.naruto.process.NodeFetcher;
 import et.naruto.process.ZKProcess;
 
-public class NodeSync extends NodeFetcherX<ServerSync> implements NodeFetcherX.Target {
+public class NodeSync extends NodeFetcher<ServerSync> implements NodeFetcher.Target {
     private final Args args;
     private final ZKProcess zkprocess;
     private final String name;

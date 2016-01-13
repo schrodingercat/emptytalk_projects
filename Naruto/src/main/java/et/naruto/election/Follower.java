@@ -54,9 +54,9 @@ class CurrentResolution {
                     } else {
                         this.dealer.Done(new Resolution("-1",new byte[0],true));
                     }
-                    return true;
                 }
             }
+            return true;
         }
         return false;
     }

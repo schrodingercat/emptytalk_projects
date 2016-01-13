@@ -3,6 +3,8 @@ package et.naruto.base;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -28,27 +30,33 @@ public class Util {
         }*/
     }
     public static class Diag {
-        public static String version="";
+        public static final String version="";
+        public static final String class_name=Diag.class.getName();
+        private static final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         protected void DoInfo(String msg){
-            System.out.println(msg);
+            System.out.println(String.format("[INFO][%s] %s",df.format(new Date()),msg));
         };
         protected void DoError(String msg){
-            System.out.println(msg);
+            System.out.println(String.format("[ERROR][%s] %s",df.format(new Date()),msg));
         };
         protected void DoDebug(String msg){
-            System.out.println(msg);
+            System.out.println(String.format("[DEBUG][%s] %s",df.format(new Date()),msg));
         };
         public static String GetParentStackClass() {
-            StackTraceElement[] ss=Thread.currentThread().getStackTrace();
-            for(int i=0;i<ss.length;i++) {
-                if(i>0) {
-                    String classname=ss[i].getClassName();
-                    if(classname.indexOf("et.naruto.Util$Diag")==-1) {
-                        return classname+":"+ss[i].getMethodName();
+            if(true) {
+                StackTraceElement[] ss=Thread.currentThread().getStackTrace();
+                for(int i=0;i<ss.length;i++) {
+                    if(i>0) {
+                        String classname=ss[i].getClassName();
+                        if(classname.indexOf(class_name)==-1) {
+                            return classname+":"+ss[i].getMethodName();
+                        }
                     }
                 }
+                return "Unknow.ClassName";
+            } else {
+                return "";
             }
-            return "Unknow.ClassName";
         }
         private static String PassMsg(String msg) {
             return String.format(

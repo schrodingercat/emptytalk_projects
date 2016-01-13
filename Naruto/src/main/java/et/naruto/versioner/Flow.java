@@ -21,7 +21,7 @@ public class Flow<REQ,RET> {
         this.request=req;
     }
     public final REQ NeedDoing() {
-        if(this.doing.Watch(null,this.in)) {
+        if(this.doing.Watch(this.in.versionable())) {
             return this.request;
         }
         return null;
@@ -40,7 +40,7 @@ public class Flow<REQ,RET> {
         return false;
     }
     public final void Out(final RET ret) {
-        if(!this.handler.Assign(ret,doing)) {
+        if(!this.handler.Assign(ret,doing.versionable())) {
             DIAG.Get.d.Error(this.toString());
         }
     }
