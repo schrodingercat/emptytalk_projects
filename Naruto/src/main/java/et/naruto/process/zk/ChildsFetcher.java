@@ -1,4 +1,4 @@
-package et.naruto.process;
+package et.naruto.process.zk;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +20,7 @@ public class ChildsFetcher extends ZKProcesser<String,ChildsFetcher.Result> {
         }
     }
     public ChildsFetcher(final ZKProcess zkprocess,final String name) {
-        super(zkprocess,name);
+        super(zkprocess,null,name);
         super.ReRequest();
     }
     public final String toString() {

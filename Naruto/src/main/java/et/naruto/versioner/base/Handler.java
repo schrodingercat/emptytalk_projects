@@ -1,4 +1,5 @@
-package et.naruto.versioner;
+package et.naruto.versioner.base;
+
 
 
 
@@ -6,9 +7,6 @@ public class Handler<RET> {
     private volatile Handleable<RET> handleable;
     public Handler() {
         this.handleable=new Handleable();
-    }
-    public Handler(final Handler<RET> handler) {
-        this.handleable=handler.handleable;
     }
     public final String toString() {
         return String.format("Handler(%s,ret=%s)",handleable.versionable.version,handleable.result);

@@ -1,22 +1,16 @@
-package et.naruto.process;
+package et.naruto.process.zk;
 
+import et.naruto.process.base.Processer;
 import et.naruto.versioner.Flow;
-import et.naruto.versioner.Handler;
-import et.naruto.versioner.Versionable;
+import et.naruto.versioner.base.Handleable;
+import et.naruto.versioner.base.Versionable;
 
 public abstract class ZKProcesser<REQ,RET> implements Processer {
     private final Flow<REQ,RET> flow;
     protected final ZKProcess zkprocess;
-    public ZKProcesser(final ZKProcess zkprocess,final REQ req) {
-        this.zkprocess=zkprocess;
-        this.flow=new Flow(req);
-        
-        this.zkprocess.AddProcesser(this);
-    }
     public ZKProcesser(final ZKProcess zkprocess,final ZKProcesser<REQ,RET> old,final REQ req) {
         this.zkprocess=zkprocess;
-        this.flow=new Flow(old.flow,req);
-        
+        this.flow=(old==null)?new Flow(req):old.flow.cont(req);
         this.zkprocess.AddProcesser(this);
     }
     public void Close() {
@@ -26,16 +20,16 @@ public abstract class ZKProcesser<REQ,RET> implements Processer {
         return this.flow.request;
     }
     public final RET result() {
-        return this.flow.result();
+        return this.flow.out_result();
     }
     public final Versionable result_versionable() {
-        return flow.handler.versionable();
+        return flow.out_handleable().versionable;
     }
     public final boolean doing() {
         return flow.doing();
     }
-    public final Handler<RET> handler() {
-        return flow.handler;
+    public final Handleable<RET> handleable() {
+        return flow.out_handleable();
     }
     
     public final void ReRequest() {

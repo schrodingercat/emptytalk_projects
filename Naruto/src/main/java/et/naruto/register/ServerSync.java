@@ -1,9 +1,9 @@
 package et.naruto.register;
 
 import et.naruto.election.Args;
-import et.naruto.process.NodeFetcher;
-import et.naruto.process.ValueFetcher;
-import et.naruto.process.ZKProcess;
+import et.naruto.process.zk.NodeFetcher;
+import et.naruto.process.zk.ValueFetcher;
+import et.naruto.process.zk.ZKProcess;
 
 public class ServerSync implements NodeFetcher.Target {
     private final Args args;

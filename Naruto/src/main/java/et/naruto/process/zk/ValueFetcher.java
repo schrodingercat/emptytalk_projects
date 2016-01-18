@@ -1,4 +1,4 @@
-package et.naruto.process;
+package et.naruto.process.zk;
 
 import java.nio.file.Paths;
 import java.util.TimerTask;
@@ -24,13 +24,10 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
     public final boolean need_watch;
     public final String name;
     public ValueFetcher(final ZKProcess zkprocess,final String path,final boolean need_watch) {
-        super(zkprocess,path);
-        super.ReRequest();
-        this.need_watch=need_watch;
-        this.name=Paths.get(path).getFileName().toString();
+        this(zkprocess,path,null,need_watch);
     }
     public ValueFetcher(final ZKProcess zkprocess,final String name) {
-        this(zkprocess,name,true);
+        this(zkprocess,name,null,true);
     }
     public ValueFetcher(final ZKProcess zkprocess,final String path,final ValueFetcher old,final boolean need_watch) {
         super(zkprocess,old,path);

@@ -1,4 +1,4 @@
-package et.naruto.process;
+package et.naruto.process.zk;
 
 import java.nio.file.Paths;
 
@@ -43,7 +43,7 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
         return String.format("VR[name=%s]",this.request().GetRegisterName());
     }
     public ValueRegister(final ZKProcess zkprocess,final Request req) {
-        super(zkprocess,req);
+        super(zkprocess,null,req);
         super.ReRequest();
     }
     public void DoCallback(final Result result) {}
@@ -76,21 +76,5 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
             null
         );
         return true;
-    }
-    public static ValueRegister Change(final ZKProcess zkprocess,final ValueRegister current,final String next,final byte[] data) {
-        boolean need_create=false;
-        if(current!=null) {
-            if(!current.request().name.equals(next)) {
-                current.Close();
-                need_create=true;
-            }
-        } else {
-            need_create=true;
-        }
-        if(need_create) {
-            ValueRegister vf=new ValueRegister(zkprocess,new ValueRegister.Request(next,data,CreateMode.PERSISTENT));
-            return vf;
-        }
-        return null;
     }
 }

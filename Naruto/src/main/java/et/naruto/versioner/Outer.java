@@ -1,27 +1,26 @@
 package et.naruto.versioner;
 
+import et.naruto.versioner.base.Handler;
+import et.naruto.versioner.base.Versioner;
+
 
 public class Outer<RET> {
-    private final Handler<RET> in;
-    private final Versioner out;
-    public Outer(final Outer outer) {
-        this.in=new Handler(outer.in);
-        this.out=new Versioner(outer.out);
-    }
+    private final Handler<RET> set;
+    private final Versioner fetch;
     public Outer() {
-        this.in=new Handler();
-        this.out=new Versioner();
+        this.set=new Handler();
+        this.fetch=new Versioner();
     }
     public final String toString() {
-        return String.format("Outer(in=%s,out=%s,ret=%s)",in.version(),out.version(),in.result());
+        return String.format("Outer(set=%s,fetch=%s,ret=%s)",set.version(),fetch.version(),set.result());
     }
     public final RET result() {
-        return this.in.result();
+        return this.set.result();
     }
     public final void Add(RET ret) {
-        in.Add(ret);
+        set.Add(ret);
     }
-    public final RET Out() {
-        return in.Output(out);
+    public final RET Fetch() {
+        return set.Output(fetch);
     }
 }

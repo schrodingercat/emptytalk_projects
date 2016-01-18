@@ -1,4 +1,4 @@
-package et.naruto.versioner;
+package et.naruto.versioner.base;
 
 public class Versionable {
     public final long version;

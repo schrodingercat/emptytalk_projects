@@ -4,14 +4,15 @@ import org.apache.zookeeper.CreateMode;
 
 import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
-import et.naruto.process.ValueFetcher;
-import et.naruto.process.ValueRegister;
-import et.naruto.process.ZKProcess;
+import et.naruto.process.zk.ValueFetcher;
+import et.naruto.process.zk.ValueRegister;
+import et.naruto.process.zk.ZKProcess;
 import et.naruto.versioner.Dealer;
 import et.naruto.versioner.Dealer.IMap;
-import et.naruto.versioner.Handler;
+import et.naruto.versioner.base.Handleable;
+import et.naruto.versioner.base.Handler;
+import et.naruto.versioner.base.Versioner;
 import et.naruto.versioner.Outer;
-import et.naruto.versioner.Versioner;
 
 class NeedResolution {
     
@@ -45,52 +46,52 @@ class CurrentNeedResolution {
     public final Dealer<NeedResolution> dealer=new Dealer();
     
     public boolean Done(
-            Handler<Resolution> follower_resolution_out_handler,
-            Handler<ResolutionRegister> resolution_register_handler) {
+            Handleable<Resolution> follower_resolution_out_handler,
+            Handleable<ResolutionRegister> resolution_register_handler) {
         if(this.dealer.Watch(
-                follower_resolution_out_handler.versionable(),
-                resolution_register_handler.versionable(),
-                resolution_register_handler.result()==null?null:resolution_register_handler.result().dealer.result_versionable()
+                follower_resolution_out_handler.versionable,
+                resolution_register_handler.versionable,
+                resolution_register_handler.result==null?null:resolution_register_handler.result.dealer.result_versionable()
         )) {
-            if(follower_resolution_out_handler.result()!=null) {
+            if(follower_resolution_out_handler.result!=null) {
                 long seq=-1;
                 byte[] need_closed=null;
                 byte[] need_regist=null;
-                if(resolution_register_handler.result()!=null) {
-                    if(resolution_register_handler.result().seq==follower_resolution_out_handler.result().seq) {
-                        if(follower_resolution_out_handler.result().closed) {
+                if(resolution_register_handler.result!=null) {
+                    if(resolution_register_handler.result.seq==follower_resolution_out_handler.result.seq) {
+                        if(follower_resolution_out_handler.result.closed) {
                             //next seq
-                            seq=follower_resolution_out_handler.result().seq+1;
-                            need_regist=follower_resolution_out_handler.result().data;
+                            seq=follower_resolution_out_handler.result.seq+1;
+                            need_regist=follower_resolution_out_handler.result.data;
                         } else {
                             do{
-                                if(resolution_register_handler.result().dealer.result()!=null) {
-                                    if(!resolution_register_handler.result().dealer.result().ok()) {
-                                        seq=follower_resolution_out_handler.result().seq+1;
-                                        need_closed=follower_resolution_out_handler.result().data;
+                                if(resolution_register_handler.result.dealer.result()!=null) {
+                                    if(!resolution_register_handler.result.dealer.result().ok()) {
+                                        seq=follower_resolution_out_handler.result.seq+1;
+                                        need_closed=follower_resolution_out_handler.result.data;
                                         break;
                                     }
                                 }
-                                need_regist=follower_resolution_out_handler.result().data;
+                                need_regist=follower_resolution_out_handler.result.data;
                             } while(false);
                         }
                     } else {
-                        if(resolution_register_handler.result().seq==(follower_resolution_out_handler.result().seq+1)) {
+                        if(resolution_register_handler.result.seq==(follower_resolution_out_handler.result.seq+1)) {
                         } else {
-                            seq=follower_resolution_out_handler.result().seq+1;
+                            seq=follower_resolution_out_handler.result.seq+1;
                         }
-                        if(follower_resolution_out_handler.result().closed) {
-                            need_regist=follower_resolution_out_handler.result().data;
+                        if(follower_resolution_out_handler.result.closed) {
+                            need_regist=follower_resolution_out_handler.result.data;
                         } else {
-                            need_closed=follower_resolution_out_handler.result().data;
+                            need_closed=follower_resolution_out_handler.result.data;
                         }
                     }
                 } else {
-                    seq=follower_resolution_out_handler.result().seq+1;
-                    if(follower_resolution_out_handler.result().closed) {
-                        need_regist=follower_resolution_out_handler.result().data;
+                    seq=follower_resolution_out_handler.result.seq+1;
+                    if(follower_resolution_out_handler.result.closed) {
+                        need_regist=follower_resolution_out_handler.result.data;
                     } else {
-                        need_closed=follower_resolution_out_handler.result().data;
+                        need_closed=follower_resolution_out_handler.result.data;
                     }
                 }
                 this.dealer.Done(new NeedResolution(seq,need_closed,need_regist));
@@ -118,26 +119,26 @@ class LeaderCatch {
     
     public final Dealer<LeaderInfo> dealer=new Dealer();
     public boolean Done(
-        final Handler<ValueFetcher.Result> follower_leader_flag_handler,
-        final Handler<Resolution> follower_resolution_handler,
-        final Handler<ResolutionRegister> resolution_register_handler
+        final Handleable<ValueFetcher.Result> follower_leader_flag_handler,
+        final Handleable<Resolution> follower_resolution_handler,
+        final Handleable<ResolutionRegister> resolution_register_handler
         ) {
         if(this.dealer.Watch(
-            follower_leader_flag_handler.versionable(),
-            resolution_register_handler.versionable(),
-            follower_resolution_handler.versionable(),
-            resolution_register_handler.result()==null?null:resolution_register_handler.result().dealer.handler.versionable()
+            follower_leader_flag_handler.versionable,
+            resolution_register_handler.versionable,
+            follower_resolution_handler.versionable,
+            resolution_register_handler.result==null?null:resolution_register_handler.result.dealer.result_versionable()
         )) {
-            if(follower_leader_flag_handler.result()!=null) {
-                if(follower_leader_flag_handler.result().value.equals(args.GetServerId())) {
-                    if(resolution_register_handler.result()!=null
-                        &&resolution_register_handler.result().dealer.result()!=null
-                        &&resolution_register_handler.result().dealer.result().ok()
+            if(follower_leader_flag_handler.result!=null) {
+                if(follower_leader_flag_handler.result.value.equals(args.GetServerId())) {
+                    if(resolution_register_handler.result!=null
+                        &&resolution_register_handler.result.dealer.result()!=null
+                        &&resolution_register_handler.result.dealer.result().ok()
                     ) {
-                        if(follower_resolution_handler.result()!=null) {
-                            if(resolution_register_handler.result().seq==follower_resolution_handler.result().seq) {
-                                if(follower_resolution_handler.result().data!=null) {
-                                    this.dealer.Done(new LeaderInfo(follower_resolution_handler.result().data));
+                        if(follower_resolution_handler.result!=null) {
+                            if(resolution_register_handler.result.seq==follower_resolution_handler.result.seq) {
+                                if(follower_resolution_handler.result.data!=null) {
+                                    this.dealer.Done(new LeaderInfo(follower_resolution_handler.result.data));
                                     DIAG.Get.d.info(String.format("%s leader catched",args.toString()));
                                     return true;
                                 }
@@ -166,7 +167,7 @@ abstract class ResolutionRegister {
     public final long seq;
     private final ZKProcess zkprocess;
     private final Args args;
-    public ResolutionRegister(final long seq,final ZKProcess zkprocess,final Args args,final Dealer old) {
+    public ResolutionRegister(final long seq,final ZKProcess zkprocess,final Args args,final Dealer<ValueRegister.Result> old) {
         this.seq=seq;
         this.zkprocess=zkprocess;
         this.args=args;
@@ -187,14 +188,14 @@ abstract class ResolutionRegister {
     private Outer<byte[]> registing=null;
     private ValueRegister registed=null;
     public final boolean Done(
-        final Handler<NeedResolution> current_need_resolution_handler
+        final Handleable<NeedResolution> current_need_resolution_handler
     ) {
         boolean next=false;
         if(this.dealer.Watch(
-            current_need_resolution_handler.versionable()
+            current_need_resolution_handler.versionable
         )) {
-            if(current_need_resolution_handler.result()!=null) {
-                final NeedResolution need_resolution=current_need_resolution_handler.result();
+            if(current_need_resolution_handler.result!=null) {
+                final NeedResolution need_resolution=current_need_resolution_handler.result;
                 if(need_resolution.need_closed!=null) {
                     if(this.closeing==null) {
                         this.closeing=this.CloseResolution(this.seq-1,need_resolution.need_closed);
@@ -212,7 +213,7 @@ abstract class ResolutionRegister {
         }
         
         if(this.closeing!=null) {
-            Boolean is_closeing=this.closeing.Out();
+            Boolean is_closeing=this.closeing.Fetch();
             if(is_closeing!=null) {
                 ValueClosed();
                 DIAG.Get.d.debug(String.format("%s closed %s resolution",args.toString(),seq));
@@ -220,7 +221,7 @@ abstract class ResolutionRegister {
             }
         }
         if(this.registing!=null) {
-            byte[] new_bytes=this.registing.Out();
+            byte[] new_bytes=this.registing.Fetch();
             if(new_bytes!=null) {
                 ValueRegisted(new_bytes);
                 DIAG.Get.d.debug(String.format("%s registed %s resolution",args.toString(),seq));
@@ -229,7 +230,7 @@ abstract class ResolutionRegister {
         }
         
         if(this.registed!=null) {
-            ValueRegister.Result result=this.dealer.handler.Sync(this.registed.handler().handleable());
+            ValueRegister.Result result=this.dealer.SyncDone(this.registed.handleable());
             if(result!=null) {
                 DIAG.Get.d.debug(String.format("%s output %s resolution",args.toString(),seq));
                 next=true;
@@ -282,6 +283,7 @@ public abstract class Master {
         return String.format("Master[pleader=%s,leader=%s,%s]",IsPreLeader(),IsLeader(),resolution_register);
     }
     
+    public final ValueFetcher leader_flag_fetcher;
     private final Versioner follower_leader_flag_versioner=new Versioner();
     private final Dealer<ResolutionRegister> resolution_register=new Dealer();
     private final CurrentNeedResolution current_need_resolution=new CurrentNeedResolution();
@@ -295,6 +297,7 @@ public abstract class Master {
     public Master(final Args args,final ZKProcess zkprocess) {
         this.args=args;
         this.zkprocess=zkprocess;
+        this.leader_flag_fetcher=new ValueFetcher(this.zkprocess,args.GetLeaderPath());
         this.leader_flag_register=new ValueRegister(
             zkprocess,
             new ValueRegister.Request(
@@ -309,7 +312,7 @@ public abstract class Master {
     public boolean Done(final Follower follower) {
         
         boolean next=false;
-        final ValueFetcher.Result leader_info=follower.leader_flag_fetcher.handler().Output(this.follower_leader_flag_versioner);
+        final ValueFetcher.Result leader_info=this.follower_leader_flag_versioner.Fetch(leader_flag_fetcher.handleable());
         if(leader_info!=null) {
             if(leader_info.value.isEmpty()) {
                 leader_flag_register.ReRequest();
@@ -317,9 +320,9 @@ public abstract class Master {
             next=true;
         }
         if(this.leader_catch.Done(
-            follower.leader_flag_fetcher.handler(),
-            follower.resolution_out.dealer.handler,
-            this.resolution_register.handler
+            leader_flag_fetcher.handleable(),
+            follower.resolution_out.dealer.result_handleable(),
+            this.resolution_register.result_handleable()
         )) {
             next=true;
         }
@@ -348,20 +351,20 @@ public abstract class Master {
                         return null;
                     }
                 },
-                this.current_need_resolution.dealer.handler
+                this.current_need_resolution.dealer.result_handleable()
             )) {
                 next=true;
             }
         
             if(this.resolution_register.result()!=null) {
-                if(this.resolution_register.result().Done(this.current_need_resolution.dealer.handler)) {
+                if(this.resolution_register.result().Done(this.current_need_resolution.dealer.result_handleable())) {
                     next=true;
                 }
             }
             
             if(this.current_need_resolution.Done(
-                follower.resolution_out.dealer.handler,
-                this.resolution_register.handler
+                follower.resolution_out.dealer.result_handleable(),
+                this.resolution_register.result_handleable()
             )) {
                 next=true;
             }

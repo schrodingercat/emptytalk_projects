@@ -1,45 +1,48 @@
 package et.naruto.versioner;
 
 import et.naruto.base.Util.DIAG;
+import et.naruto.versioner.base.Handleable;
+import et.naruto.versioner.base.Handler;
+import et.naruto.versioner.base.Versionable;
+import et.naruto.versioner.base.Versioner;
 
 
 public class Dealer<RET> {
-    private final Versioner in;
-    public final Handler<RET> handler;
-    public Dealer(final Dealer dealer) {
-        this.in=new Versioner(dealer.in);
-        this.handler=new Handler(dealer.handler);
-    }
+    private final Versioner watch;
+    private final Handler<RET> result;
     public Dealer() {
-        this.in=new Versioner();
-        this.handler=new Handler();
+        this.watch=new Versioner();
+        this.result=new Handler();
     }
     public final RET result() {
-        return handler.result();
+        return result.result();
     }
     public final Versionable result_versionable() {
-        return this.handler.versionable();
+        return this.result.versionable();
+    }
+    public final Handleable<RET> result_handleable() {
+        return this.result.handleable();
     }
     public final String toString() {
-        return String.format("Dealer(in=%s,out=%s,ret=%s)",in.version(),handler.version(),handler.result());
+        return String.format("Dealer(in=%s,out=%s,ret=%s)",watch.version(),result.version(),result.result());
     }
     public final boolean Watch(final Versionable... versionables) {
         for(Versionable v:versionables) {
-            if(v==handler.versionable()) {
+            if(v==result.versionable()) {
                 DIAG.Get.d.Error(toString());
             }
         }
-        return in.Watch(versionables);
+        return watch.Watch(versionables);
     }
     
     public static interface IMap<SRC,RET> {
         public RET map(final RET ret,final SRC src);
     }
-    public final <SRC> boolean Map(final IMap<SRC,RET> map,final Handler<SRC> handler) {
-        if(this.in.Watch(null,handler.versionable())) {
-            RET ret=map.map(this.handler.result(),handler.result());
+    public final <SRC> boolean Map(final IMap<SRC,RET> map,final Handleable<SRC> handleable) {
+        if(this.watch.Watch(handleable.versionable)) {
+            RET ret=map.map(this.result.result(),handleable.result);
             if(ret!=null) {
-                this.handler.Add(ret);
+                this.result.Add(ret);
                 return true;
             }
         }
@@ -47,6 +50,9 @@ public class Dealer<RET> {
     }
     
     public final void Done(final RET ret) {
-        this.handler.Add(ret);
+        this.result.Add(ret);
+    }
+    public final RET SyncDone(final Handleable<RET> handleable) {
+        return this.result.Sync(handleable);
     }
 }

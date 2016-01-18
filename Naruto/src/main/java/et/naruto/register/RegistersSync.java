@@ -3,11 +3,11 @@ package et.naruto.register;
 import org.apache.zookeeper.CreateMode;
 
 import et.naruto.election.Args;
-import et.naruto.process.NodeFetcher;
-import et.naruto.process.ValueRegister;
-import et.naruto.process.ZKProcess;
+import et.naruto.process.zk.NodeFetcher;
+import et.naruto.process.zk.ValueRegister;
+import et.naruto.process.zk.ZKProcess;
 import et.naruto.versioner.Dealer;
-import et.naruto.versioner.Versioner;
+import et.naruto.versioner.base.Versioner;
 
 public class RegistersSync extends NodeFetcher<NodeSync> {
     private final Args args;

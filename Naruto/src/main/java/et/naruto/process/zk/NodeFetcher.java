@@ -1,12 +1,13 @@
-package et.naruto.process;
+package et.naruto.process.zk;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
 
+import et.naruto.process.base.Processer;
 import et.naruto.versioner.Dealer;
-import et.naruto.versioner.Versionable;
+import et.naruto.versioner.base.Versionable;
 
 public abstract class NodeFetcher<X extends NodeFetcher.Target> implements Processer {
     public static interface Target {

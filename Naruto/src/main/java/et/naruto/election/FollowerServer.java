@@ -1,7 +1,7 @@
 package et.naruto.election;
 
 import et.naruto.base.Util.ZKArgs;
-import et.naruto.process.ZKProcess;
+import et.naruto.process.zk.ZKProcess;
 import et.naruto.versioner.Outer;
 
 public class FollowerServer {

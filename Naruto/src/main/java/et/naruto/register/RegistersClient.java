@@ -2,7 +2,7 @@ package et.naruto.register;
 
 import et.naruto.base.Util.ZKArgs;
 import et.naruto.election.Args;
-import et.naruto.process.ZKProcess;
+import et.naruto.process.zk.ZKProcess;
 
 public class RegistersClient {
     public String toString() {

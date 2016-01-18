@@ -1,41 +1,25 @@
-package et.naruto.process;
+package et.naruto.process.base;
 
 import java.util.HashSet;
-import java.util.Timer;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.zookeeper.ZooKeeper;
 
 import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
-import et.naruto.base.Util.ZKArgs;
 
-public class ZKProcess extends Thread {
-    public final ZooKeeper zk;
-    public final Timer tm;
+public class Process extends Thread {
     private final HashSet<Processer> processers=new HashSet();
     private boolean running=false;
     private AtomicBoolean ticked=new AtomicBoolean(false);
-    public ZKProcess(final String name,final ZKArgs zkargs) {
+    public Process(final String name) {
         super("zkprocess:"+name);
-        this.tm=new Timer();
-        this.zk=zkargs.Create();
     }
-    public void AddProcesser(final Processer processer) {
+    public final void AddProcesser(final Processer processer) {
         this.processers.add(processer);
         Tick();
     }
-    public void DelProcesser(final Processer processer) {
+    public final void DelProcesser(final Processer processer) {
         this.processers.remove(processer);
         Tick();
-    }
-    public void Close() {
-        Stop();
-        try {
-            this.zk.close();
-        } catch (Exception e) {
-            Util.DIAG.Get.d.pass_error("",e);
-        }
     }
     public void Start() {
         super.start();
@@ -49,12 +33,6 @@ public class ZKProcess extends Thread {
             } catch (Exception e) {
                 Util.DIAG.Get.d.pass_error("",e);
             } finally {
-                tm.cancel();
-                try {
-                    zk.close();
-                } catch (Exception e) {
-                    Util.DIAG.Get.d.pass_error("",e);
-                }
             }
         }
     }

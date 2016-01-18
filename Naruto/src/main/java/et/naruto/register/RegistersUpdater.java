@@ -6,11 +6,11 @@ import org.apache.zookeeper.CreateMode;
 
 import et.naruto.base.Util.DIAG;
 import et.naruto.election.Args;
-import et.naruto.process.Processer;
-import et.naruto.process.ValueRegister;
-import et.naruto.process.ZKProcess;
+import et.naruto.process.base.Processer;
+import et.naruto.process.zk.ValueRegister;
+import et.naruto.process.zk.ZKProcess;
 import et.naruto.versioner.Dealer;
-import et.naruto.versioner.Versioner;
+import et.naruto.versioner.base.Versioner;
 
 public abstract class RegistersUpdater implements Processer {
     private class Checking extends TimerTask {
@@ -57,10 +57,10 @@ public abstract class RegistersUpdater implements Processer {
         boolean next=false;
         if(flow_check.Watch(
             null,
-            registers_register.handler().versionable(),
-            node_register==null?null:node_register.handler().versionable(),
-            server_register==null?null:server_register.handler().versionable(),
-            active_register==null?null:active_register.handler().versionable()
+            registers_register.result_versionable(),
+            node_register==null?null:node_register.result_versionable(),
+            server_register==null?null:server_register.result_versionable(),
+            active_register==null?null:active_register.result_versionable()
         )) {
             if(active_register==null) {
                 if(server_register==null) {

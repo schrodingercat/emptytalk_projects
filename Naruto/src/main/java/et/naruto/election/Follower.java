@@ -4,12 +4,12 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 import et.naruto.base.Util;
-import et.naruto.process.ChildsFetcher;
-import et.naruto.process.ValueFetcher;
-import et.naruto.process.ZKProcess;
+import et.naruto.process.zk.ChildsFetcher;
+import et.naruto.process.zk.ValueFetcher;
+import et.naruto.process.zk.ZKProcess;
 import et.naruto.versioner.Dealer;
-import et.naruto.versioner.Handler;
-import et.naruto.versioner.Versioner;
+import et.naruto.versioner.base.Handleable;
+import et.naruto.versioner.base.Versioner;
 
 class Resolution {
     public final String toString() {
@@ -30,18 +30,18 @@ class Resolution {
 class CurrentResolution {
     public final Dealer<Resolution> dealer=new Dealer();
     public boolean Done(
-            final Handler<ChildsFetcher.Result> resolutions_fetcher,
-            final Handler<ChildsFetcher.Result> resolutions_closed_fetcher,
+            final Handleable<ChildsFetcher.Result> resolutions_fetcher,
+            final Handleable<ChildsFetcher.Result> resolutions_closed_fetcher,
             final ValueFetcher current_resolution_fetcher) {
         if(this.dealer.Watch(
-                resolutions_fetcher.versionable(),
-                resolutions_closed_fetcher.versionable(),
-                current_resolution_fetcher==null?null:current_resolution_fetcher.handler().versionable())) {
-            if(resolutions_fetcher.result()!=null) {
-                if(resolutions_closed_fetcher.result()!=null) {
-                    if(resolutions_fetcher.result().childs.size()>0) {
-                        String last=resolutions_fetcher.result().childs.last();
-                        boolean closed=resolutions_closed_fetcher.result().childs.contains(last);
+                resolutions_fetcher.versionable,
+                resolutions_closed_fetcher.versionable,
+                current_resolution_fetcher==null?null:current_resolution_fetcher.result_versionable())) {
+            if(resolutions_fetcher.result!=null) {
+                if(resolutions_closed_fetcher.result!=null) {
+                    if(resolutions_fetcher.result.childs.size()>0) {
+                        String last=resolutions_fetcher.result.childs.last();
+                        boolean closed=resolutions_closed_fetcher.result.childs.contains(last);
                         byte[] data=null;
                         if(current_resolution_fetcher!=null) {
                             if(current_resolution_fetcher.name.equals(last)) {
@@ -76,19 +76,17 @@ public class Follower {
     private final Versioner resolutions_closed_fetcher_versioner=new Versioner();
     private ValueFetcher current_resolution_fetcher=null;
     
-    public final ValueFetcher leader_flag_fetcher;
     public final CurrentResolution resolution_out=new CurrentResolution();
     
     public Follower(final Args args,final ZKProcess zkprocess) {
         this.args=args;
         this.zkprocess=zkprocess;
-        this.leader_flag_fetcher=new ValueFetcher(this.zkprocess,args.GetLeaderPath());
         this.resolutions_fetcher=new ChildsFetcher(this.zkprocess,args.GetResolutionsPath());
         this.resolutions_closed_fetcher=new ChildsFetcher(this.zkprocess,args.GetResolutionsClosedPath());
     }
     public boolean Done() {
         boolean next=false;
-        final ChildsFetcher.Result resolutions=this.resolutions_fetcher.handler().Output(resolutions_fetcher_versioner);
+        final ChildsFetcher.Result resolutions=this.resolutions_fetcher_versioner.Fetch(this.resolutions_fetcher.handleable());
         if(resolutions!=null) {
             if(!resolutions.exist) {
                 zkprocess.zk.create(
@@ -113,7 +111,7 @@ public class Follower {
             }
             next=true;
         }
-        final ChildsFetcher.Result resolutions_closed=this.resolutions_closed_fetcher.handler().Output(this.resolutions_closed_fetcher_versioner);
+        final ChildsFetcher.Result resolutions_closed=this.resolutions_closed_fetcher_versioner.Fetch(this.resolutions_closed_fetcher.handleable());
         if(resolutions_closed!=null) {
             if(!resolutions_closed.exist) {
                 zkprocess.zk.create(
@@ -129,8 +127,8 @@ public class Follower {
         }
         
         if(resolution_out.Done(
-            resolutions_fetcher.handler(),
-            resolutions_closed_fetcher.handler(),
+            resolutions_fetcher.handleable(),
+            resolutions_closed_fetcher.handleable(),
             current_resolution_fetcher
         )) {
             next=true;

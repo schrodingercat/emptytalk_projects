@@ -15,10 +15,10 @@ import et.naruto.base.Util.DIAG;
 import et.naruto.base.Util.ZKArgs;
 import et.naruto.election.Args;
 import et.naruto.election.Server;
-import et.naruto.process.ChildsFetcher;
-import et.naruto.process.ValueFetcher;
-import et.naruto.process.ValueRegister;
-import et.naruto.process.ZKProcess;
+import et.naruto.process.zk.ChildsFetcher;
+import et.naruto.process.zk.ValueFetcher;
+import et.naruto.process.zk.ValueRegister;
+import et.naruto.process.zk.ZKProcess;
 import et.naruto.register.NodeSync;
 import et.naruto.register.RegistersClient;
 import et.naruto.register.RegistersSync;
@@ -29,7 +29,7 @@ import et.naruto.register.ServerSync;
 
 
 
-public class HelloWorldTest {
+public class MainTest {
     public static ZKArgs zkargs=new ZKArgs("localhost:2181");
     public static String base_path="/naruto_test";
     public static ZooKeeper zk=zkargs.Create();
@@ -57,7 +57,7 @@ public class HelloWorldTest {
         Util.ForceDeleteNode(process.zk,base_path);
         Util.Sleep(3*1000);
         Assert.assertTrue(vf.result().value.equals(""));
-        process.Close();
+        process.Stop();
     }
     @Test
     public void testChildsFetcher() {
@@ -79,7 +79,7 @@ public class HelloWorldTest {
         Util.ForceDeleteNode(process.zk,base_path);
         Util.Sleep(3*1000);
         Assert.assertTrue(vf.result().value.equals(""));
-        process.Close();
+        process.Stop();
     }
     @Test
     public void testValueRegister() {
@@ -92,7 +92,7 @@ public class HelloWorldTest {
         ValueRegister vr=new ValueRegister(process,new ValueRegister.Request(base_path,"hello",CreateMode.EPHEMERAL));
         Util.Sleep(3*1000);
         Assert.assertTrue(vf.result().value.equals("hello"));
-        process.Close();
+        process.Stop();
         Util.ForceDeleteNode(process.zk,base_path);
     }
     @Test
@@ -112,7 +112,7 @@ public class HelloWorldTest {
         ServerSync server_sync=node_sync.dealer.result().get(args.server_num);
         Assert.assertTrue(server_sync!=null);
         Assert.assertTrue(server_sync.active_fetcher.result().value.equals("active_test"));
-        process.Close();
+        process.Stop();
         nf.Close();
     }
     private static int register_active_count=0;
@@ -129,7 +129,7 @@ public class HelloWorldTest {
         process.Start();
         Util.Sleep(3*1000+30*1000);
         Assert.assertTrue(Integer.valueOf(Util.GetNodeData(zk,args.GetActivePath()),10)>0);
-        process.Close();
+        process.Stop();
         nf.Close();
     }
     
@@ -138,7 +138,7 @@ public class HelloWorldTest {
         public final RegistersClient register_client;
         public final RegistersUpdater register_updater;
         public RegistersClientTest(final int i) {
-            this.args=HelloWorldTest.CreateArgs(i);
+            this.args=MainTest.CreateArgs(i);
             this.register_client=new RegistersClient(args,zkargs);
             this.register_updater=new RegistersUpdater(this.register_client.zkprocess,args) {
                 protected byte[] DoGetActiveInfo() {
@@ -177,7 +177,7 @@ public class HelloWorldTest {
     public void testElectionServer() {
         Util.ForceCreateNode(zk,base_path,"server_test",true);
         final ArrayList<Server> ss=new ArrayList();
-        long length=500;
+        long length=50;
         for(int i=0;i<length;i++) {
             ss.add(new Server(CreateArgs(i),zkargs));
         }

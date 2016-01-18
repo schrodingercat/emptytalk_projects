@@ -1,4 +1,5 @@
-package et.naruto.versioner;
+package et.naruto.versioner.base;
+
 
 public class Handleable<RET> {
     public final Versionable versionable;
