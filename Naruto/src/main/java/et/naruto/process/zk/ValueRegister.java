@@ -44,7 +44,9 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
     }
     public ValueRegister(final ZKProcess zkprocess,final Request req) {
         super(zkprocess);
-        super.Request(req);
+        if(req!=null) {
+            super.Request(req);
+        }
     }
     public void DoCallback(final Result result) {}
     public boolean DoDo(final Request req) {

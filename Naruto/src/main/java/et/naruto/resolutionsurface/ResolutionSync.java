@@ -46,7 +46,7 @@ class CurrentResolutionGenerator {
     }
 }
 
-public class ResolutionSurfaceSync implements Processer{
+public class ResolutionSync implements Processer, AutoCloseable {
     @Override
     public String toString() {
         return String.format("ResolutionSeqSync(R=%s,RC=%s,current=%s)",resolutions_fetcher,resolutions_closed_fetcher,current_resolution_fetcher);
@@ -68,7 +68,7 @@ public class ResolutionSurfaceSync implements Processer{
         return this.current_resolution_generator.dealer.result_handleable();
     }
     
-    public ResolutionSurfaceSync(final String resolutions_path,final String token,final ZKProcess zkprocess) {
+    public ResolutionSync(final String resolutions_path,final String token,final ZKProcess zkprocess) {
         this.resolutions_path=resolutions_path;
         this.token=token;
         this.zkprocess=zkprocess;
@@ -77,7 +77,7 @@ public class ResolutionSurfaceSync implements Processer{
         this.current_resolution_fetcher=new ValueFetcher(this.zkprocess,null,false);
         this.zkprocess.AddProcesser(this);
     }
-    public void Close() {
+    public void close() {
         this.zkprocess.DelProcesser(this);
         this.resolutions_fetcher.Close();
         this.resolutions_closed_fetcher.Close();
