@@ -43,8 +43,8 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
         return String.format("VR[name=%s]",this.request().GetRegisterName());
     }
     public ValueRegister(final ZKProcess zkprocess,final Request req) {
-        super(zkprocess,null,req);
-        super.ReRequest();
+        super(zkprocess);
+        super.Request(req);
     }
     public void DoCallback(final Result result) {}
     public boolean DoDo(final Request req) {

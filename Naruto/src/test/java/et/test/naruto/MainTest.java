@@ -24,6 +24,7 @@ import et.naruto.register.RegistersClient;
 import et.naruto.register.RegistersSync;
 import et.naruto.register.RegistersUpdater;
 import et.naruto.register.ServerSync;
+import et.naruto.resolutionsurface.ResolutionSurfaceSync;
 
 
 
@@ -171,6 +172,18 @@ public class MainTest {
                     active_fetcher.result().value.equals(s.args.GetServerId()));
             s.register_client.Stop();
         }
+    }
+    @Test
+    public void testResolutionSurfaceSync() {
+        Util.ForceCreateNode(zk,base_path,"resolution_surface_sync_test",true);
+        ZKProcess process=new ZKProcess("test",zkargs);
+        ResolutionSurfaceSync rs=new ResolutionSurfaceSync(base_path+"/Resolutions","hello",process);
+        process.Start();
+        Util.Sleep(3*1000);
+        Assert.assertTrue(Util.GetNodeData(zk,base_path+"/Resolutions").length()>0);
+        Assert.assertTrue(Util.GetNodeData(zk,base_path+"/ResolutionsClosed").length()>0);
+        process.Stop();
+        rs.Close();
     }
     
     @Test

@@ -20,8 +20,8 @@ public class ChildsFetcher extends ZKProcesser<String,ChildsFetcher.Result> {
         }
     }
     public ChildsFetcher(final ZKProcess zkprocess,final String name) {
-        super(zkprocess,null,name);
-        super.ReRequest();
+        super(zkprocess);
+        super.Request(name);
     }
     public final String toString() {
         final Result re=this.result();

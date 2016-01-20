@@ -20,13 +20,10 @@ public class FollowerServer {
         this.args=args;
         this.zkprocess=new ZKProcess(args.GetServerId(),zkargs) {
             public void DoRun() {
-                if(follower.Done()) {
-                    zkprocess.Tick();
-                }
                 server_ref.DoRun();
             }
         };
-        this.follower=new Follower(args,zkprocess);
+        this.follower=new Follower(args.GetResolutionsPath(),args.GetServerId(),zkprocess);
     }
     final public void Start() {
         this.zkprocess.Start();

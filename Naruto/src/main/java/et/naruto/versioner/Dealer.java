@@ -34,6 +34,22 @@ public class Dealer<RET> {
         }
         return watch.Watch(versionables);
     }
+    public final boolean Watch(final Handleable... handleables) {
+        Versionable[] vs=new Versionable[handleables.length];
+        int i=0;
+        for(Handleable h:handleables) {
+            if(h!=null) {
+                if(h==result.handleable()) {
+                    DIAG.Get.d.Error(toString());
+                }
+                vs[i]=h.versionable;
+            } else {
+                vs[i]=null;
+            }
+            i++;
+        }
+        return Watch(vs);
+    }
     
     public static interface IMap<SRC,RET> {
         public RET map(final RET ret,final SRC src);

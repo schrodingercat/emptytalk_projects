@@ -4,15 +4,16 @@ import org.apache.zookeeper.CreateMode;
 
 import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
+import et.naruto.base.Util.Diag.LEVEL;
+import et.naruto.process.base.Processer;
 import et.naruto.process.zk.ValueFetcher;
 import et.naruto.process.zk.ValueRegister;
 import et.naruto.process.zk.ZKProcess;
 import et.naruto.versioner.Dealer;
 import et.naruto.versioner.Dealer.IMap;
-import et.naruto.versioner.base.Handleable;
-import et.naruto.versioner.base.Handler;
-import et.naruto.versioner.base.Versioner;
 import et.naruto.versioner.Outer;
+import et.naruto.versioner.base.Handleable;
+import et.naruto.versioner.base.Versioner;
 
 class NeedResolution {
     
@@ -46,12 +47,16 @@ class CurrentNeedResolution {
     public final Dealer<NeedResolution> dealer=new Dealer();
     
     public boolean Done(
-            Handleable<Resolution> follower_resolution_out_handler,
-            Handleable<ResolutionRegister> resolution_register_handler) {
+            final Handleable<Resolution> follower_resolution_out_handler,
+            final Handleable<ResolutionRegister> resolution_register_handler) {
+        final Handleable<ValueRegister.Result> resolution_register_result_handler=
+            resolution_register_handler.result==null?
+                null
+                :resolution_register_handler.result.dealer.result_handleable();
         if(this.dealer.Watch(
-                follower_resolution_out_handler.versionable,
-                resolution_register_handler.versionable,
-                resolution_register_handler.result==null?null:resolution_register_handler.result.dealer.result_versionable()
+                follower_resolution_out_handler,
+                resolution_register_handler,
+                resolution_register_result_handler
         )) {
             if(follower_resolution_out_handler.result!=null) {
                 long seq=-1;
@@ -65,11 +70,13 @@ class CurrentNeedResolution {
                             need_regist=follower_resolution_out_handler.result.data;
                         } else {
                             do{
-                                if(resolution_register_handler.result.dealer.result()!=null) {
-                                    if(!resolution_register_handler.result.dealer.result().ok()) {
-                                        seq=follower_resolution_out_handler.result.seq+1;
-                                        need_closed=follower_resolution_out_handler.result.data;
-                                        break;
+                                if(resolution_register_result_handler!=null) {
+                                    if(resolution_register_result_handler.result!=null) {
+                                        if(!resolution_register_result_handler.result.ok()) {
+                                            seq=follower_resolution_out_handler.result.seq+1;
+                                            need_closed=follower_resolution_out_handler.result.data;
+                                            break;
+                                        }
                                     }
                                 }
                                 need_regist=follower_resolution_out_handler.result.data;
@@ -278,49 +285,68 @@ abstract class ResolutionRegister {
     }
 }
 
+class PreLeaderRegister implements Processer {
+    public final ValueFetcher flag_fetcher;
+    private final Versioner flag_versioner=new Versioner();
+    private final ValueRegister flag_register;
+    private final ZKProcess zkprocess;
+    public PreLeaderRegister(final String leader_path,final String server_id,final ZKProcess zkprocess) {
+        this.zkprocess=zkprocess;
+        this.flag_fetcher=new ValueFetcher(zkprocess,leader_path);
+        this.flag_register=new ValueRegister(
+            zkprocess,
+            new ValueRegister.Request(
+                leader_path,
+                server_id,
+                CreateMode.EPHEMERAL
+            )
+        );
+        zkprocess.AddProcesser(this);
+    }
+    public void Close() {
+        this.flag_fetcher.Close();
+        this.flag_register.Close();
+        this.zkprocess.DelProcesser(this);
+    }
+    public boolean Do() {
+        boolean next=false;
+        final ValueFetcher.Result leader_info=this.flag_versioner.Fetch(flag_fetcher.handleable());
+        if(leader_info!=null) {
+            if(leader_info.value.isEmpty()) {
+                flag_register.ReRequest();
+            }
+            next=true;
+        }
+        return next;
+    }
+}
+
 public abstract class Master {
     public String toString() {
         return String.format("Master[pleader=%s,leader=%s,%s]",IsPreLeader(),IsLeader(),resolution_register);
     }
     
-    public final ValueFetcher leader_flag_fetcher;
-    private final Versioner follower_leader_flag_versioner=new Versioner();
+    private final PreLeaderRegister pre_leader_register;
     private final Dealer<ResolutionRegister> resolution_register=new Dealer();
     private final CurrentNeedResolution current_need_resolution=new CurrentNeedResolution();
     
     private final Args args;
     private final ZKProcess zkprocess;
-    private final ValueRegister leader_flag_register;
     private final LeaderCatch leader_catch;
     
     
     public Master(final Args args,final ZKProcess zkprocess) {
         this.args=args;
         this.zkprocess=zkprocess;
-        this.leader_flag_fetcher=new ValueFetcher(this.zkprocess,args.GetLeaderPath());
-        this.leader_flag_register=new ValueRegister(
-            zkprocess,
-            new ValueRegister.Request(
-                args.GetLeaderPath(),
-                args.GetServerId(),
-                CreateMode.EPHEMERAL
-            )
-        );
+        this.pre_leader_register=new PreLeaderRegister(args.GetLeaderPath(),args.GetServerId(),zkprocess);
         this.leader_catch=new LeaderCatch(args);
         
     }
     public boolean Done(final Follower follower) {
         
         boolean next=false;
-        final ValueFetcher.Result leader_info=this.follower_leader_flag_versioner.Fetch(leader_flag_fetcher.handleable());
-        if(leader_info!=null) {
-            if(leader_info.value.isEmpty()) {
-                leader_flag_register.ReRequest();
-            }
-            next=true;
-        }
         if(this.leader_catch.Done(
-            leader_flag_fetcher.handleable(),
+            pre_leader_register.flag_fetcher.handleable(),
             follower.resolution_out.dealer.result_handleable(),
             this.resolution_register.result_handleable()
         )) {

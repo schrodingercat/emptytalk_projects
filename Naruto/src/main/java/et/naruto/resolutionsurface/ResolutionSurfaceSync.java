@@ -1,9 +1,8 @@
-package et.naruto.election;
+package et.naruto.resolutionsurface;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 
-import et.naruto.base.Util;
 import et.naruto.process.base.Processer;
 import et.naruto.process.zk.ChildsFetcher;
 import et.naruto.process.zk.ValueFetcher;
@@ -12,23 +11,7 @@ import et.naruto.versioner.Dealer;
 import et.naruto.versioner.base.Handleable;
 import et.naruto.versioner.base.Versioner;
 
-class Resolution {
-    public final String toString() {
-        return String.format("Resolution(seq=%s,data=%s,closed=%s)", seq,data==null?null:data.length,closed);
-    }
-    public final String name;
-    public final long seq;
-    public final byte[] data;
-    public final boolean closed;
-    public Resolution(final String name,final byte[] data,final boolean closed) {
-        this.name=name;
-        this.seq=Util.String2Long(name);
-        this.data=data;
-        this.closed=closed;
-    }
-}
-
-class CurrentResolution {
+class CurrentResolutionGenerator {
     public final Dealer<Resolution> dealer=new Dealer();
     public boolean Done(
             final Handleable<ChildsFetcher.Result> resolutions_fetcher,
@@ -63,15 +46,15 @@ class CurrentResolution {
     }
 }
 
-public class Follower implements Processer{
+public class ResolutionSurfaceSync implements Processer{
     @Override
     public String toString() {
-        return String.format("Follower(R=%s,RC=%s,current=%s)",resolutions_fetcher,resolutions_closed_fetcher,current_resolution_fetcher);
+        return String.format("ResolutionSeqSync(R=%s,RC=%s,current=%s)",resolutions_fetcher,resolutions_closed_fetcher,current_resolution_fetcher);
     }
     
     private final String resolutions_path;
     private final String resolutions_closed_path() {return resolutions_path+"Closed";}
-    private final String server_id;
+    private final String token;
     private final ZKProcess zkprocess;
     private final ChildsFetcher resolutions_fetcher;
     private final ChildsFetcher resolutions_closed_fetcher;
@@ -79,11 +62,15 @@ public class Follower implements Processer{
     private final Versioner resolutions_closed_fetcher_versioner=new Versioner();
     private final ValueFetcher current_resolution_fetcher;
     
-    public final CurrentResolution resolution_out=new CurrentResolution();
+    private final CurrentResolutionGenerator current_resolution_generator=new CurrentResolutionGenerator();
     
-    public Follower(final String resolutions_path,final String server_id,final ZKProcess zkprocess) {
+    public final Handleable<Resolution> current_Resolution_handleable() {
+        return this.current_resolution_generator.dealer.result_handleable();
+    }
+    
+    public ResolutionSurfaceSync(final String resolutions_path,final String token,final ZKProcess zkprocess) {
         this.resolutions_path=resolutions_path;
-        this.server_id=server_id;
+        this.token=token;
         this.zkprocess=zkprocess;
         this.resolutions_fetcher=new ChildsFetcher(this.zkprocess,resolutions_path);
         this.resolutions_closed_fetcher=new ChildsFetcher(this.zkprocess,resolutions_closed_path());
@@ -105,7 +92,7 @@ public class Follower implements Processer{
             if(!resolutions.exist) {
                 zkprocess.zk.create(
                     this.resolutions_path,
-                    this.server_id.getBytes(),
+                    this.token.getBytes(),
                     Ids.OPEN_ACL_UNSAFE,
                     CreateMode.PERSISTENT,
                     null,
@@ -114,7 +101,7 @@ public class Follower implements Processer{
             } else {
                 if(resolutions.childs.size()>0) {
                     String last_path=this.resolutions_path+"/"+resolutions.childs.last();
-                    if((current_resolution_fetcher.request()==null)||(!current_resolution_fetcher.request().equals(last_path))) {
+                    if((current_resolution_fetcher.request()!=null)||(!current_resolution_fetcher.request().equals(last_path))) {
                         current_resolution_fetcher.Request(last_path);
                     }
                 }
@@ -126,7 +113,7 @@ public class Follower implements Processer{
             if(!resolutions_closed.exist) {
                 zkprocess.zk.create(
                     this.resolutions_closed_path(),
-                    this.server_id.getBytes(),
+                    this.token.getBytes(),
                     Ids.OPEN_ACL_UNSAFE,
                     CreateMode.PERSISTENT,
                     null,
@@ -136,7 +123,7 @@ public class Follower implements Processer{
             next=true;
         }
         
-        if(resolution_out.Done(
+        if(current_resolution_generator.Done(
             resolutions_fetcher.handleable(),
             resolutions_closed_fetcher.handleable(),
             current_resolution_fetcher

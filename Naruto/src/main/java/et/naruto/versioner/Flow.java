@@ -7,31 +7,27 @@ import et.naruto.versioner.base.Versioner;
 
 
 public class Flow<REQ,RET> {
-    public final REQ request;
-    private final Versioner in;
+    private final Handler<REQ> in;
     private final Versioner doing;
     private final Handler<RET> out;
-    private Flow(final REQ request,final Versioner in,final Versioner doing,final Handler<RET> out) {
-        this.request=request;
+    private Flow(final Handler<REQ> in,final Versioner doing,final Handler<RET> out) {
         this.in=in;
         this.doing=doing;
         this.out=out;
     }
-    public Flow(final REQ req) {
-        this(req,new Versioner(),new Versioner(),new Handler());
-    }
-    public final Flow<REQ,RET> cont(final REQ req) {
-        return new Flow(req,this.in,this.doing,this.out);
+    public Flow() {
+        this(new Handler(),new Versioner(),new Handler());
     }
     public final REQ NeedDoing() {
-        if(this.doing.Watch(this.in.versionable())) {
-            return this.request;
-        }
-        return null;
+        REQ req=this.in.Output(this.doing);
+        return req;
+    }
+    public final void AddIn(REQ req) {
+        this.in.Add(req);
     }
     public final boolean AddIn() {
         if(!doing()) {
-            this.in.Add();
+            this.in.Add(this.in.result());
             return true;
         }
         return false;
@@ -49,6 +45,9 @@ public class Flow<REQ,RET> {
     }
     public final Handleable<RET> out_handleable() {
         return out.handleable();
+    }
+    public final REQ in_request() {
+        return in.result();
     }
     public final RET out_result() {
         return out.result();

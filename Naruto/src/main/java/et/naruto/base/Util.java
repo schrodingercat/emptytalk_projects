@@ -30,17 +30,23 @@ public class Util {
         }*/
     }
     public static class Diag {
+        public static enum LEVEL {
+            INFO("[INFO] "),
+            ERROR("[ERROR]"),
+            DEBUG("[DEBUG]");
+            private final String tag;
+            private LEVEL(String tag) {
+                this.tag=tag;
+            }
+            public String toString() {
+                return this.tag;
+            }
+        }
         public static final String version="";
         public static final String class_name=Diag.class.getName();
         private static final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-        protected void DoInfo(String msg){
-            System.out.println(String.format("[INFO][%s] %s",df.format(new Date()),msg));
-        };
-        protected void DoError(String msg){
-            System.out.println(String.format("[ERROR][%s] %s",df.format(new Date()),msg));
-        };
-        protected void DoDebug(String msg){
-            System.out.println(String.format("[DEBUG][%s] %s",df.format(new Date()),msg));
+        protected void DoOutput(LEVEL level,String msg){
+            System.out.println(String.format("%s[%s] %s",level.toString(),df.format(new Date()),msg));
         };
         public static String GetParentStackClass() {
             if(true) {
@@ -72,15 +78,17 @@ public class Util {
             e.printStackTrace(new PrintWriter(sw,true));
             return sw.toString();
         }
-            
+        public void out(LEVEL level,String msg) {
+            DoOutput(level,PassMsg(msg));
+        }
         public void info(String msg) {
-            DoInfo(PassMsg(msg));
+            out(LEVEL.INFO,msg);
         }
         public void debug(String msg) {
-            DoDebug(PassMsg(msg));
+            out(LEVEL.DEBUG,msg);
         }
         public void error(String msg) {
-            DoError(PassMsg(msg));
+            out(LEVEL.ERROR,msg);
         }
         
         public RuntimeException dig_error(String msg,Throwable e) {
@@ -90,7 +98,7 @@ public class Util {
             } else {
                 re.setStackTrace(e.getStackTrace());
             }
-            error(msg+throwable_string(re));
+            out(LEVEL.ERROR,msg+throwable_string(re));
             return re;
         }
         

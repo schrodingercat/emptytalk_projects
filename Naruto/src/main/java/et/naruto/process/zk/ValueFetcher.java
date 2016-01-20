@@ -22,29 +22,29 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
         }
     }
     public final boolean need_watch;
-    public final String name;
-    public ValueFetcher(final ZKProcess zkprocess,final String path,final boolean need_watch) {
-        this(zkprocess,path,null,need_watch);
-    }
     public ValueFetcher(final ZKProcess zkprocess,final String name) {
-        this(zkprocess,name,null,true);
+        this(zkprocess,name,true);
     }
-    public ValueFetcher(final ZKProcess zkprocess,final String path,final ValueFetcher old,final boolean need_watch) {
-        super(zkprocess,old,path);
-        super.ReRequest();
+    public ValueFetcher(final ZKProcess zkprocess,final String path,final boolean need_watch) {
+        super(zkprocess);
         this.need_watch=need_watch;
-        this.name=Paths.get(path).getFileName().toString();
+        if(path!=null) {
+            super.Request(path);
+        }
+    }
+    public final String name() {
+        return Paths.get(this.request()).getFileName().toString();
     }
     public final String toString() {
         final Result re=this.result();
         if(re!=null) {
             if(re.data!=null) {
-                return String.format("VF(name=%s,size=0)",this.name);
+                return String.format("VF(name=%s,size=0)",this.name());
             } else {
-                return String.format("VF(name=%s,size=%s)",this.name,re.data.length);
+                return String.format("VF(name=%s,size=%s)",this.name(),re.data.length);
             }
         } else {
-            return String.format("VF(name=%s,null)",this.name);
+            return String.format("VF(name=%s,null)",this.name());
         }
     }
     public boolean DoDo(final String req) {
@@ -109,7 +109,7 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
         );
         return true;
     }
-    public static ValueFetcher Change(final ZKProcess zkprocess,final ValueFetcher current,final String next) {
+    /*public static ValueFetcher Change(final ZKProcess zkprocess,final ValueFetcher current,final String next) {
         boolean need_create=false;
         if(current!=null) {
             if(!current.request().equals(next)) {
@@ -129,5 +129,5 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
             return vf;
         }
         return null;
-    }
+    }*/
 }
