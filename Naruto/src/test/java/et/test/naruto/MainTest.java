@@ -24,7 +24,8 @@ import et.naruto.register.RegistersClient;
 import et.naruto.register.RegistersSync;
 import et.naruto.register.RegistersUpdater;
 import et.naruto.register.ServerSync;
-import et.naruto.resolutionsurface.ResolutionSync;
+import et.naruto.resolutionsurface.RSArgs;
+import et.naruto.resolutionsurface.ResolutionSurface;
 
 
 
@@ -174,14 +175,25 @@ public class MainTest {
         }
     }
     @Test
-    public void testResolutionSurfaceSync() {
+    public void testResolutionSurfaceSurface() {
         Util.ForceCreateNode(zk,base_path,"resolution_surface_sync_test",true);
         ZKProcess process=new ZKProcess("test",zkargs);
-        ResolutionSync rs=new ResolutionSync(base_path+"/Resolutions","hello",process);
+        ResolutionSurface rs=new ResolutionSurface(process,new RSArgs(base_path+"/Resolutions","hello"));
         process.Start();
         Util.Sleep(3*1000);
         Assert.assertTrue(Util.GetNodeData(zk,base_path+"/Resolutions").length()>0);
         Assert.assertTrue(Util.GetNodeData(zk,base_path+"/ResolutionsClosed").length()>0);
+        Assert.assertTrue(rs.current_resolution_handleable().result.seq==-1);
+        
+        rs.Regist(new ResolutionSurface.Request("hello".getBytes(),0));
+        Util.Sleep(3*1000);
+        Assert.assertTrue(rs.out_handleable().result);
+        Assert.assertTrue(rs.current_resolution_handleable().result.seq==0);
+        
+        ResolutionSurface rs1=new ResolutionSurface(process,new RSArgs(base_path+"/Resolutions","hello1"));
+        rs1.Regist(new ResolutionSurface.Request("hello".getBytes(),0));
+        Util.Sleep(3*1000);
+        
         process.Stop();
         rs.close();
     }

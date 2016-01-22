@@ -34,9 +34,13 @@ class CurrentResolutionGenerator {
                                 }
                             }
                         }
-                        this.dealer.Done(new Resolution(last,data,closed));
+                        if(data!=null) {
+                            this.dealer.Done(new Resolution(last,new Data(data),closed));
+                        } else {
+                            this.dealer.Done(new Resolution(last,new Data(),closed));
+                        }
                     } else {
-                        this.dealer.Done(new Resolution("-1",new byte[0],true));
+                        this.dealer.Done(new Resolution("-1",new Data(),true));
                     }
                 }
             }
@@ -64,7 +68,7 @@ public class ResolutionSync implements Processer, AutoCloseable {
     
     private final CurrentResolutionGenerator current_resolution_generator=new CurrentResolutionGenerator();
     
-    public final Handleable<Resolution> current_Resolution_handleable() {
+    public final Handleable<Resolution> current_resolution_handleable() {
         return this.current_resolution_generator.dealer.result_handleable();
     }
     
@@ -101,7 +105,7 @@ public class ResolutionSync implements Processer, AutoCloseable {
             } else {
                 if(resolutions.childs.size()>0) {
                     String last_path=this.resolutions_path+"/"+resolutions.childs.last();
-                    if((current_resolution_fetcher.request()!=null)||(!current_resolution_fetcher.request().equals(last_path))) {
+                    if((current_resolution_fetcher.request()==null)||(!current_resolution_fetcher.request().equals(last_path))) {
                         current_resolution_fetcher.Request(last_path);
                     }
                 }
