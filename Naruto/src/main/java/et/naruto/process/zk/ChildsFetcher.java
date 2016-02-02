@@ -9,6 +9,8 @@ import org.apache.zookeeper.AsyncCallback.ChildrenCallback;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 
+import et.naruto.versioner.base.Handleable;
+
 
 public class ChildsFetcher extends ZKProcesser<String,ChildsFetcher.Result> {
     public static class Result {
@@ -43,10 +45,10 @@ public class ChildsFetcher extends ZKProcesser<String,ChildsFetcher.Result> {
             return "CF(null)";
         }
     }
-    public boolean DoDo(final String req) {
+    public boolean DoDo(final Handleable<String> req) {
         final ChildsFetcher childs_fetcher_ref=this;
         zkprocess.zk.getChildren(
-            req,
+            req.result,
             new Watcher() {
                 public void process(WatchedEvent event) {
                     childs_fetcher_ref.ReRequest();
@@ -64,10 +66,10 @@ public class ChildsFetcher extends ZKProcesser<String,ChildsFetcher.Result> {
                         for(String child:children) {
                             ret.add(child);
                         }
-                        childs_fetcher_ref.Done(new Result(ret,true));
+                        childs_fetcher_ref.Done(new Handleable(new Result(ret,true),req.versionable));
                         break;
                     default:
-                        childs_fetcher_ref.Done(new Result(new ArrayList(),false));
+                        childs_fetcher_ref.Done(new Handleable(new Result(new ArrayList(),false),req.versionable));
                         zkprocess.tm.schedule(
                             new TimerTask(){
                                 public void run() {

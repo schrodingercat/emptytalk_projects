@@ -20,9 +20,9 @@ public class Versioner {
     public final Versionable versionable() {
         return this.versionable;
     }
-    public final long version() {
+    /*public final long version() {
         return this.versionable.version;
-    }
+    }*/
     public final <RET> RET Fetch(final Handleable<RET> handleable) {
         Handleable<RET> r=handleable.Output(this.versionable);
         if(r!=null) {

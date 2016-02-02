@@ -10,7 +10,11 @@ public class Resolution {
     public final long seq;
     public final Data data;
     public final boolean closed;
-    public Resolution(final String name,final Data data,final boolean closed) {
+    public Resolution(
+        final String name,
+        final Data data,
+        final boolean closed
+    ) {
         this.name=name;
         this.seq=Util.String2Long(name);
         this.data=data;

@@ -12,7 +12,12 @@ public class Outer<RET> {
         this.fetch=new Versioner();
     }
     public final String toString() {
-        return String.format("Outer(set=%s,fetch=%s,ret=%s)",set.version(),fetch.version(),set.result());
+        return String.format(
+            "Outer(set=%s,fetch=%s,ret=%s)",
+            set.versionable().toRawString(),
+            fetch.versionable().toRawString(),
+            set.result()
+        );
     }
     public final RET result() {
         return this.set.result();
@@ -21,6 +26,6 @@ public class Outer<RET> {
         set.Add(ret);
     }
     public final RET Fetch() {
-        return set.Output(fetch);
+        return fetch.Fetch(set.handleable());
     }
 }

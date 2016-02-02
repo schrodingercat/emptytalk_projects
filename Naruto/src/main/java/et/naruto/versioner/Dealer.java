@@ -24,7 +24,12 @@ public class Dealer<RET> {
         return this.result.handleable();
     }
     public final String toString() {
-        return String.format("Dealer(in=%s,out=%s,ret=%s)",watch.version(),result.version(),result.result());
+        return String.format(
+            "Dealer(in=%s,out=%s,ret=%s)",
+            watch.versionable().toRawString(),
+            result.versionable().toRawString(),
+            result.result()
+        );
     }
     public final boolean Watch(final Versionable... versionables) {
         for(Versionable v:versionables) {

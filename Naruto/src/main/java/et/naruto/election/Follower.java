@@ -45,9 +45,11 @@ class CurrentResolution {
                         boolean closed=resolutions_closed_fetcher.result.childs.contains(last);
                         byte[] data=null;
                         if(current_resolution_fetcher!=null) {
-                            if(current_resolution_fetcher.name().equals(last)) {
-                                if(current_resolution_fetcher.result()!=null) {
-                                    data=current_resolution_fetcher.result().data;
+                            if(current_resolution_fetcher.request()!=null) {
+                                if(current_resolution_fetcher.name().equals(last)) {
+                                    if(current_resolution_fetcher.result()!=null) {
+                                        data=current_resolution_fetcher.result().data;
+                                    }
                                 }
                             }
                         }

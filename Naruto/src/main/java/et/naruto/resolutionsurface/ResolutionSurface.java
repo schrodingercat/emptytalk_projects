@@ -12,10 +12,13 @@ import et.naruto.versioner.Dealer;
 import et.naruto.versioner.Flow;
 import et.naruto.versioner.base.Handleable;
 import et.naruto.versioner.base.Handler;
+import et.naruto.versioner.base.Versionable;
 import et.naruto.versioner.base.Versioner;
 
-class RegistHandler {
+class RegistHandler implements AutoCloseable {
     public final long seq;
+    public final byte[] byte_data;
+    public final Versionable seq_versionable;
     private final RSArgs args;
     private final ZKProcess zkprocess;
     private final Dealer<Boolean> dealer;
@@ -23,16 +26,13 @@ class RegistHandler {
     private final ValueRegister closed;
     private final ValueRegister registed;
     private Handler<Boolean> closeing=null;
-    private Handler<byte[]> registing=null;
+    //private Handler<byte[]> registing=null;
     private boolean has_unknow=false;
-    public RegistHandler(final ZKProcess zkprocess,final long seq,final RSArgs args,final RegistHandler old) {
-        if(old!=null) {
-            old.close();
-            this.dealer=old.dealer;
-        } else {
-            this.dealer=new Dealer();
-        }
+    public RegistHandler(final ZKProcess zkprocess,final long seq,final byte[] byte_data,final Versionable seq_versionable,final RSArgs args) {
+        this.dealer=new Dealer();
         this.seq=seq;
+        this.byte_data=byte_data;
+        this.seq_versionable=seq_versionable;
         this.args=args;
         this.zkprocess=zkprocess;
         this.closed=new ValueRegister(zkprocess,null);
@@ -42,20 +42,19 @@ class RegistHandler {
         return dealer.result_handleable();
     }
     public void close() {
+        this.closed.Close();
+        this.registed.Close();
     }
     public boolean Done(
         final Handleable<Resolution> current_resolution_handleable
     ) {
-        if(dealer.result()!=null) {
-            return false;
-        }
         boolean next=false;
         if(dealer.Watch(
             current_resolution_handleable.versionable,
             closed.result_versionable(),
             registed.result_versionable(),
-            closeing==null?null:closeing.versionable(),
-            registing==null?null:registing.versionable()
+            closeing==null?null:closeing.versionable()//,
+            //registing==null?null:registing.versionable()
         )) {
             if(current_resolution_handleable.result.seq==this.seq) {
                 Boolean result=null;
@@ -97,7 +96,7 @@ class RegistHandler {
                     if(current_resolution_handleable.result.closed) {
                         if(registed.request()!=null) {
                             //go wait registed end or failed
-                            if(registed.result()==null) {
+                            if(registed.result()!=null) {
                                 if(registed.result().succ==null) {
                                     //exception
                                     if(!registed.doing()) {
@@ -116,18 +115,18 @@ class RegistHandler {
                                 }
                             }
                         } else {
-                            if(registing!=null) {
-                                if(this.registing.result()!=null) {
-                                    this.registed.Request(new ValueRegister.Request(args.path+"/"+Util.Long2String(this.seq),new Data(this.registing.result(),this.args.token).data,CreateMode.PERSISTENT));
-                                }
-                            } else {
-                                this.registing=RegistingResolution(this.seq,current_resolution_handleable.result.data);
-                            }
+                            this.registed.Request(
+                                new ValueRegister.Request(
+                                    args.path+"/"+Util.Long2String(this.seq),
+                                    new Data(this.byte_data==null?new byte[0]:this.byte_data,this.args.token).data,
+                                    CreateMode.PERSISTENT
+                                )
+                            );
                         }
                     } else {
                         if(closed.request()!=null) {
                             //go wait closed end or failed
-                            if(closed.result()==null) {
+                            if(closed.result()!=null) {
                                 if(closed.result().succ==null) {
                                     //exception
                                     if(!closed.doing()) {
@@ -152,7 +151,13 @@ class RegistHandler {
                                     //wait closeing end or failed
                                 }
                             } else {
-                                this.closeing=CloseingResolution(current_resolution_handleable.result.seq,current_resolution_handleable.result.data);
+                                if(current_resolution_handleable.result.data.split>0) {
+                                    if(!current_resolution_handleable.result.data.is_closed()) {
+                                        this.closeing=CloseingResolution(current_resolution_handleable.result.seq,current_resolution_handleable.result.data);
+                                    } else {
+                                        dealer.Done(false);
+                                    }
+                                }
                             }
                         }
                     }
@@ -168,11 +173,6 @@ class RegistHandler {
         r.Add(true);
         return r;
     }
-    public Handler<byte[]> RegistingResolution(final long seq,final Data data) {
-        Handler<byte[]> r=new Handler();
-        r.Add("test".getBytes());
-        return r;
-    }
 }
 
 
@@ -185,20 +185,28 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
             this.seq=seq;
         }
     }
-    private final Flow<Request,Boolean> flow=new Flow();
+    public static class Result {
+        public final long seq;
+        public final Boolean succ;
+        public Result(final long seq,final Boolean succ) {
+            this.seq=seq;
+            this.succ=succ;
+        }
+    }
+    private final Flow<Request,Result> flow=new Flow();
     private final Versioner regist_handler_check=new Versioner();
     
-    private final RSArgs args;
+    public final RSArgs args;
     private final ZKProcess zkprocess;
     private final ResolutionSync resolution_sync;
     private RegistHandler regist_handler=null;
     public ResolutionSurface(final ZKProcess zkprocess,final RSArgs args) {
         this.args=args;
         this.zkprocess=zkprocess;
-        this.resolution_sync=new ResolutionSync(args.path,args.token,zkprocess);
+        this.resolution_sync=new ResolutionSync(args,zkprocess);
         this.zkprocess.AddProcesser(this);
     }
-    public final Handleable<Boolean> out_handleable() {
+    public final Handleable<Result> out_handleable() {
         return flow.out_handleable();
     }
     public final Handleable<Resolution> current_resolution_handleable() {
@@ -217,27 +225,40 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
     public boolean Do() {
         boolean next=false;
         
-        final Request request=this.flow.NeedDoing();
-        if(request!=null) {
-            final Handleable<Resolution> current_resolution=resolution_sync.current_resolution_handleable();
-            if(current_resolution.result!=null) {
-                if(current_resolution.result.seq+1==request.seq) {
+        final Handleable<Resolution> current_resolution=resolution_sync.current_resolution_handleable();
+        if(current_resolution.result!=null) {
+            final Handleable<Request> request=this.flow.NeedDoing();
+            if(request!=null) {
+                if(current_resolution.result.seq+1==request.result.seq) {
                     boolean need_new_handler=false;
                     if(regist_handler!=null) {
-                        if(regist_handler.seq!=request.seq) {
+                        if(regist_handler.seq!=request.result.seq) {
                             need_new_handler=true;
+                            regist_handler.close();
                         }
                     } else {
                         need_new_handler=true;
                     }
                     if(need_new_handler) {
-                        regist_handler=new RegistHandler(this.zkprocess,request.seq,args,regist_handler);
+                        regist_handler=new RegistHandler(
+                            this.zkprocess,
+                            request.result.seq,
+                            request.result.data,
+                            request.versionable,
+                            args
+                        );
+                    } else {
+                        //is doing
                     }
                 } else {
-                    this.flow.Out(result);
+                    if(current_resolution.result.seq+1>request.result.seq) {
+                        this.flow.Out(new Handleable(new Result(request.result.seq,false),request.versionable));
+                    } else {
+                        this.flow.Out(new Handleable(new Result(request.result.seq,null),request.versionable));
+                    }
                 }
+                next=true;
             }
-            next=true;
         }
         if(regist_handler!=null) {
             if(regist_handler.Done(resolution_sync.current_resolution_handleable())) {
@@ -245,7 +266,7 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
             }
             Boolean result=regist_handler_check.Fetch(regist_handler.result_handleable());
             if(result!=null) {
-                this.flow.Out(result);
+                this.flow.Out(new Handleable(new Result(regist_handler.seq,result),regist_handler.seq_versionable));
                 next=true;
             }
         }

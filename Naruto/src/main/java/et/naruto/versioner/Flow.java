@@ -18,30 +18,29 @@ public class Flow<REQ,RET> {
     public Flow() {
         this(new Handler(),new Versioner(),new Handler());
     }
-    public final REQ NeedDoing() {
-        REQ req=this.in.Output(this.doing);
-        return req;
+    public final Handleable<REQ> NeedDoing() {
+        Handleable<REQ> handleable=this.in.handleable();
+        if(this.doing.Watch(handleable.versionable)) {
+            return handleable;
+        }
+        return null;
     }
     public final void AddIn(REQ req) {
         this.in.Add(req);
     }
-    public final boolean AddIn() {
+    public final void ReIn() {
         if(!doing()) {
             this.in.Add(this.in.result());
-            return true;
         }
-        return false;
     }
     public final boolean doing() {
-        if(in.version()>out.version()) {
+        if(out.versionable().IsFallBehind(in.versionable())) {
             return true;
         }
         return false;
     }
-    public final void Out(final RET ret) {
-        if(!this.out.Assign(ret,doing.versionable())) {
-            DIAG.Get.d.Error(this.toString());
-        }
+    public final void Out(final Handleable<RET> ret) {
+        this.out.Assign(ret);
     }
     public final Handleable<RET> out_handleable() {
         return out.handleable();

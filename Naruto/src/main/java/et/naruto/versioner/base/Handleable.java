@@ -8,18 +8,22 @@ public class Handleable<RET> {
         this.versionable=new Versionable();
         this.result=null;
     }
-    private Handleable(final RET result,final Versionable versionable) {
+    public Handleable(final RET result,final Versionable versionable) {
         this.result=result;
         this.versionable=versionable;
     }
-    public final long version() {
+    /*public final long version() {
         return this.versionable.version;
-    }
+    }*/
     public final String toString() {
-        return String.format("Handleable(%s,ret=%s)",versionable.version,result);
+        return String.format("Handleable(%s,ret=%s)",versionable.toRawString(),result);
     }
     public final Handleable<RET> Output(final Versionable versionable) {
-        return Watch(versionable,this);
+        Versionable v=versionable.Watch(this.versionable);
+        if(v!=null) {
+            return this;
+        }
+        return null;
     }
     public static final <RET> Handleable<RET> Add(final RET ret,final Versionable versionable) {
         return new Handleable(ret,versionable.Add());
@@ -28,13 +32,6 @@ public class Handleable<RET> {
         Versionable v=versionable_this.Watch(versionable_object);
         if(v!=null) {
             return new Handleable(ret,v);
-        }
-        return null;
-    }
-    public static final <RET> Handleable<RET> Watch(final Versionable versionable,final Handleable<RET> handle) {
-        Versionable v=versionable.Watch(handle.versionable);
-        if(v!=null) {
-            return handle;
         }
         return null;
     }

@@ -184,7 +184,11 @@ public class Util {
         }
     }
     public static String Long2String(final long value) {
-        return String.format("%08x",value);
+        if(value>=0) {
+            return String.format("%08x",value);
+        } else {
+            return String.format("-%08x",-value);
+        }
     }
     public static long String2Long(final String value) {
         return Long.valueOf(value,16);

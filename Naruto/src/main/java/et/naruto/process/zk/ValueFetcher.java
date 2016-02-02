@@ -9,6 +9,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
 
 import et.naruto.base.Util.DIAG;
+import et.naruto.versioner.base.Handleable;
 
 public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
     public class Result {
@@ -47,10 +48,10 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
             return String.format("VF(name=%s,null)",this.name());
         }
     }
-    public boolean DoDo(final String req) {
+    public boolean DoDo(final Handleable<String> req) {
         final ValueFetcher value_fetcher_ref=this;
         zkprocess.zk.getData(
-            req,
+            req.result,
             need_watch?
                 new Watcher() {
                     public void process(WatchedEvent event) {
@@ -69,30 +70,41 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
                     case 0:
                         try {
                             value_fetcher_ref.Done(
-                                new Result(
-                                    data,
-                                    new String(data,"UTF-8"),
-                                    stat.getEphemeralOwner()!=0
+                                new Handleable(
+                                    new Result(
+                                        data,
+                                        new String(data,"UTF-8"),
+                                        stat.getEphemeralOwner()!=0
+                                    ),
+                                    req.versionable
                                 )
                             );
                         } catch (Exception e) {
                             DIAG.Get.d.dig_error("",e);
                             value_fetcher_ref.Done(
-                                new Result(
-                                    data,
-                                    "",
-                                    stat.getEphemeralOwner()!=0
+                                new Handleable(
+                                    new Result(
+                                        data,
+                                        "",
+                                        stat.getEphemeralOwner()!=0
+                                    ),
+                                    req.versionable
                                 )
                             );
                         } finally {
                         }
                         break;
                     default:
-                        value_fetcher_ref.Done(new Result(
-                            null,
-                            "",
-                            false
-                        ));
+                        value_fetcher_ref.Done(
+                            new Handleable(
+                                new Result(
+                                    null,
+                                    "",
+                                    false
+                                ),
+                                req.versionable
+                            )
+                        );
                         zkprocess.tm.schedule(
                             new TimerTask(){
                                 public void run() {
@@ -109,25 +121,4 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
         );
         return true;
     }
-    /*public static ValueFetcher Change(final ZKProcess zkprocess,final ValueFetcher current,final String next) {
-        boolean need_create=false;
-        if(current!=null) {
-            if(!current.request().equals(next)) {
-                current.Close();
-                need_create=true;
-            }
-        } else {
-            need_create=true;
-        }
-        if(need_create) {
-            ValueFetcher vf=null;
-            if(current!=null) {
-                vf=new ValueFetcher(zkprocess,next,current,false);
-            } else {
-                vf=new ValueFetcher(zkprocess,next,false);
-            }
-            return vf;
-        }
-        return null;
-    }*/
 }

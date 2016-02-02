@@ -35,6 +35,9 @@ public class Data {
             DIAG.Get.d.pass_error("",e);
         }
     }
+    public final boolean is_closed() {
+        return (this.split>0)&&(data_length()==0);
+    }
     public final int token_length() {
         return split;
     }

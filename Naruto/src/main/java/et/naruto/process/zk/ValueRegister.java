@@ -8,6 +8,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 import et.naruto.base.Util.DIAG;
+import et.naruto.versioner.base.Handleable;
 
 
 public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegister.Result> {
@@ -49,13 +50,13 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
         }
     }
     public void DoCallback(final Result result) {}
-    public boolean DoDo(final Request req) {
+    public boolean DoDo(final Handleable<Request> req) {
         final ValueRegister value_register_ref=this;
         zkprocess.zk.create(
-            req.name,
-            req.want_value,
+            req.result.name,
+            req.result.want_value,
             Ids.OPEN_ACL_UNSAFE,
-            req.mode,
+            req.result.mode,
             new StringCallback() {
                 public void processResult(int rc, String path, Object ctx, String name) {
                     Result r=null;
@@ -71,7 +72,7 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
                         r=new Result(null);
                         break;
                     }
-                    value_register_ref.Done(r);
+                    value_register_ref.Done(new Handleable(r,req.versionable));
                     DoCallback(r);
                 }
             },

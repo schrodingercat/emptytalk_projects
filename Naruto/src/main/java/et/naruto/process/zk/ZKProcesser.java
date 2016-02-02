@@ -39,21 +39,21 @@ public abstract class ZKProcesser<REQ,RET> implements Processer {
         this.zkprocess.Tick();
     }
     public final void ReRequest() {
-        this.flow.AddIn();
+        this.flow.ReIn();
         this.zkprocess.Tick();
     }
     public final boolean Do() {
-        REQ req=flow.NeedDoing();
+        Handleable<REQ> req=flow.NeedDoing();
         if(req!=null) {
             return DoDo(req);
         }
         return false;
     }
-    protected final void Done(final RET ret) {
+    protected final void Done(final Handleable<RET> ret) {
         flow.Out(ret);
         this.zkprocess.Tick();
     }
     
-    public abstract boolean DoDo(final REQ req);
+    public abstract boolean DoDo(final Handleable<REQ> req);
     
 }

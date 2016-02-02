@@ -175,27 +175,94 @@ public class MainTest {
         }
     }
     @Test
-    public void testResolutionSurfaceSurface() {
+    public void testResolutionSurface() {
         Util.ForceCreateNode(zk,base_path,"resolution_surface_sync_test",true);
         ZKProcess process=new ZKProcess("test",zkargs);
-        ResolutionSurface rs=new ResolutionSurface(process,new RSArgs(base_path+"/Resolutions","hello"));
+        ArrayList<ResolutionSurface> rss=new ArrayList();
+        
+        long length=50;
+        for(int i=0;i<length;i++) {
+            rss.add(new ResolutionSurface(process,new RSArgs(base_path+"/Resolutions","hello"+i)));
+        }
         process.Start();
         Util.Sleep(3*1000);
+        
         Assert.assertTrue(Util.GetNodeData(zk,base_path+"/Resolutions").length()>0);
         Assert.assertTrue(Util.GetNodeData(zk,base_path+"/ResolutionsClosed").length()>0);
-        Assert.assertTrue(rs.current_resolution_handleable().result.seq==-1);
+        Assert.assertTrue(rss.get(0).current_resolution_handleable().result.seq==-1);
         
-        rs.Regist(new ResolutionSurface.Request("hello".getBytes(),0));
-        Util.Sleep(3*1000);
-        Assert.assertTrue(rs.out_handleable().result);
-        Assert.assertTrue(rs.current_resolution_handleable().result.seq==0);
+        ResolutionSurface succ_rs=null;
+        int l=10;
+        for(int j=0;j<=l;j++) {
         
-        ResolutionSurface rs1=new ResolutionSurface(process,new RSArgs(base_path+"/Resolutions","hello1"));
-        rs1.Regist(new ResolutionSurface.Request("hello".getBytes(),0));
-        Util.Sleep(3*1000);
+            for(int i=0;i<rss.size();i++) {
+                if(succ_rs!=rss.get(i)) {
+                    if(j==l-1) {
+                        rss.get(i).Regist(new ResolutionSurface.Request(null,j));
+                    } else {
+                        rss.get(i).Regist(new ResolutionSurface.Request(("hello"+i).getBytes(),j));
+                    }
+                    Util.Sleep(10);
+                }
+            }
+            succ_rs=null;
+            
+            
+            Util.Sleep(3*1000);
+            
+            int succ_count=0;
+            int fail_count=0;
+            int exception_count=0;
+            int result_seq_j=0;
+            int no_result_seq_j=0;
+            for(int i=0;i<rss.size();i++) {
+                ResolutionSurface.Result result=rss.get(i).out_handleable().result;
+                if(result.seq==j) {
+                    result_seq_j++;
+                    if(result.succ!=null) {
+                        if(result.succ) {
+                            succ_count++;
+                            succ_rs=rss.get(i);
+                        } else {
+                            fail_count++;
+                        }
+                    } else {
+                        exception_count++;
+                    }
+                } else {
+                    no_result_seq_j++;
+                }
+                if(j!=l) {
+                    Assert.assertTrue(rss.get(i).current_resolution_handleable().result.seq==j);
+                } else {
+                    Assert.assertTrue(rss.get(i).current_resolution_handleable().result.seq==(j-1));
+                }
+            }
+            
+            
+            if(j==l) {
+                Assert.assertTrue(no_result_seq_j==1);
+                Assert.assertTrue(result_seq_j>1);
+                Assert.assertTrue(succ_count==0);
+                Assert.assertTrue(fail_count>0);
+                Assert.assertTrue(fail_count>=exception_count);
+            } else {
+                DIAG.Get.d.info(String.format("testResolutionSurfaceSurface j is %s ,token is %s ",j,succ_rs.args.token));
+                Assert.assertTrue(no_result_seq_j<=1);
+                Assert.assertTrue(result_seq_j>1);
+                Assert.assertTrue(succ_count==1);
+                Assert.assertTrue(fail_count>=exception_count);
+            }
+        
+        }
+        
+        
         
         process.Stop();
-        rs.close();
+        
+        for(int i=0;i<rss.size();i++) {
+            rss.get(i).close();
+        }
     }
     
     @Test
