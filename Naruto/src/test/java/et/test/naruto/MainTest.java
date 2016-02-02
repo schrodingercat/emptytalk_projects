@@ -19,11 +19,11 @@ import et.naruto.process.zk.ChildsFetcher;
 import et.naruto.process.zk.ValueFetcher;
 import et.naruto.process.zk.ValueRegister;
 import et.naruto.process.zk.ZKProcess;
-import et.naruto.register.NodeSync;
 import et.naruto.register.RegistersClient;
-import et.naruto.register.RegistersSync;
 import et.naruto.register.RegistersUpdater;
-import et.naruto.register.ServerSync;
+import et.naruto.register.sync.NodeSync;
+import et.naruto.register.sync.RegistersSync;
+import et.naruto.register.sync.ServerSync;
 import et.naruto.resolutionsurface.RSArgs;
 import et.naruto.resolutionsurface.ResolutionSurface;
 
@@ -255,8 +255,6 @@ public class MainTest {
             }
         
         }
-        
-        
         
         process.Stop();
         

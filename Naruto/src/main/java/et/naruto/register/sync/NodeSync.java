@@ -1,4 +1,4 @@
-package et.naruto.register;
+package et.naruto.register.sync;
 
 import et.naruto.election.Args;
 import et.naruto.process.zk.NodeFetcher;

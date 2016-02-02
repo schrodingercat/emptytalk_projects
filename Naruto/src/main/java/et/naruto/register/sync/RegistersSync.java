@@ -1,4 +1,4 @@
-package et.naruto.register;
+package et.naruto.register.sync;
 
 import org.apache.zookeeper.CreateMode;
 
