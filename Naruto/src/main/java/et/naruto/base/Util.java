@@ -13,6 +13,9 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 
 public class Util {
+    public static enum UNIQ {
+        VALUE;
+    }
     public static enum DIAG {
         Get;
         public Diag d=new Diag();

@@ -5,20 +5,27 @@ import java.util.TimerTask;
 import org.apache.zookeeper.CreateMode;
 
 import et.naruto.base.Util;
+import et.naruto.base.Util.DIAG;
+import et.naruto.base.Util.UNIQ;
 import et.naruto.process.base.Processer;
 import et.naruto.process.zk.ValueRegister;
 import et.naruto.process.zk.ZKProcess;
 import et.naruto.versioner.Dealer;
-import et.naruto.versioner.Flow;
+import et.naruto.versioner.Outer;
 import et.naruto.versioner.base.Handleable;
 import et.naruto.versioner.base.Handler;
-import et.naruto.versioner.base.Versionable;
-import et.naruto.versioner.base.Versioner;
 
 class RegistHandler implements AutoCloseable {
+    //public static class Result {
+        //public final long seq;
+        //public final boolean arrive;
+        //public Result(/*final long seq,*/final boolean arrive) {
+            //this.seq=seq;
+         //   this.arrive=arrive;
+        //}
+    //}
     public final long seq;
     public final byte[] byte_data;
-    public final Versionable seq_versionable;
     private final RSArgs args;
     private final ZKProcess zkprocess;
     private final Dealer<Boolean> dealer;
@@ -26,13 +33,11 @@ class RegistHandler implements AutoCloseable {
     private final ValueRegister closed;
     private final ValueRegister registed;
     private Handler<Boolean> closeing=null;
-    //private Handler<byte[]> registing=null;
-    private boolean has_unknow=false;
-    public RegistHandler(final ZKProcess zkprocess,final long seq,final byte[] byte_data,final Versionable seq_versionable,final RSArgs args) {
+    public RegistHandler(final ZKProcess zkprocess,final long seq,final byte[] byte_data,final RSArgs args) {
         this.dealer=new Dealer();
         this.seq=seq;
         this.byte_data=byte_data;
-        this.seq_versionable=seq_versionable;
+        //this.seq_versionable=seq_versionable;
         this.args=args;
         this.zkprocess=zkprocess;
         this.closed=new ValueRegister(zkprocess,null);
@@ -53,118 +58,87 @@ class RegistHandler implements AutoCloseable {
             current_resolution_handleable.versionable,
             closed.result_versionable(),
             registed.result_versionable(),
-            closeing==null?null:closeing.versionable()//,
-            //registing==null?null:registing.versionable()
+            closeing==null?null:closeing.versionable()
         )) {
-            if(current_resolution_handleable.result.seq==this.seq) {
-                Boolean result=null;
-                if(registed!=null) {
-                    if(registed.result()!=null) {
-                        boolean is_unknow=false;
-                        if(registed.result().succ!=null) {
-                            if(registed.result().succ) {
-                                result=true;
+            if(current_resolution_handleable.result.seq+1==this.seq) {
+                if(current_resolution_handleable.result.closed) {
+                    if(registed.request()!=null) {
+                        //go wait registed end or failed
+                        if(registed.result()!=null) {
+                            if(registed.result().succ==null) {
+                                //exception
+                                if(!registed.doing()) {
+                                    //has_unknow=true;
+                                    this.zkprocess.tm.schedule(
+                                        new TimerTask() {
+                                            public void run() {
+                                                registed.ReRequest();
+                                            }
+                                        },
+                                        1000
+                                    );
+                                }
                             } else {
-                                if(has_unknow) {
-                                    is_unknow=true;
-                                } else {
-                                    result=false;
-                                }
-                            }
-                        } else {
-                            is_unknow=true;
-                        }
-                        if(is_unknow) {
-                            //identify
-                            if(current_resolution_handleable.result.data!=null) {
-                                if(current_resolution_handleable.result.data.getToken().equals(this.args.token)) {
-                                    result=true;
-                                }
+                                //failed or ok
                             }
                         }
                     } else {
-                        //wait
+                        this.registed.Request(
+                            new ValueRegister.Request(
+                                args.path+"/"+Util.Long2String(this.seq),
+                                new Data(this.byte_data==null?new byte[0]:this.byte_data,this.args.token).data,
+                                CreateMode.PERSISTENT
+                            )
+                        );
                     }
                 } else {
-                    result=false;
-                }
-                if(result!=null) {
-                    dealer.Done(result);
+                    if(closed.request()!=null) {
+                        //go wait closed end or failed
+                        if(closed.result()!=null) {
+                            if(closed.result().succ==null) {
+                                //exception
+                                if(!closed.doing()) {
+                                    this.zkprocess.tm.schedule(
+                                        new TimerTask() {
+                                            public void run() {
+                                                closed.ReRequest();
+                                            }
+                                        },
+                                        1000
+                                    );
+                                }
+                            } else {
+                                //failed or ok
+                            }
+                        }
+                    } else {
+                        if(closeing!=null) {
+                            if(this.closeing.result()!=null) {
+                                closed.Request(new ValueRegister.Request(args.closed_path()+"/"+Util.Long2String(current_resolution_handleable.result.seq),args.token,CreateMode.PERSISTENT));
+                            } else {
+                                //wait closeing end or failed
+                            }
+                        } else {
+                            if(current_resolution_handleable.result.data.split>0) {
+                                if(!current_resolution_handleable.result.data.is_closed()) {
+                                    this.closeing=CloseingResolution(current_resolution_handleable.result.seq,current_resolution_handleable.result.data);
+                                } else {
+                                    dealer.Done(false);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
-                if(current_resolution_handleable.result.seq+1==this.seq) {
-                    if(current_resolution_handleable.result.closed) {
-                        if(registed.request()!=null) {
-                            //go wait registed end or failed
-                            if(registed.result()!=null) {
-                                if(registed.result().succ==null) {
-                                    //exception
-                                    if(!registed.doing()) {
-                                        has_unknow=true;
-                                        this.zkprocess.tm.schedule(
-                                            new TimerTask() {
-                                                public void run() {
-                                                    registed.ReRequest();
-                                                }
-                                            },
-                                            1000
-                                        );
-                                    }
-                                } else {
-                                    //failed or ok
-                                }
-                            }
-                        } else {
-                            this.registed.Request(
-                                new ValueRegister.Request(
-                                    args.path+"/"+Util.Long2String(this.seq),
-                                    new Data(this.byte_data==null?new byte[0]:this.byte_data,this.args.token).data,
-                                    CreateMode.PERSISTENT
-                                )
-                            );
-                        }
-                    } else {
-                        if(closed.request()!=null) {
-                            //go wait closed end or failed
-                            if(closed.result()!=null) {
-                                if(closed.result().succ==null) {
-                                    //exception
-                                    if(!closed.doing()) {
-                                        this.zkprocess.tm.schedule(
-                                            new TimerTask() {
-                                                public void run() {
-                                                    closed.ReRequest();
-                                                }
-                                            },
-                                            1000
-                                        );
-                                    }
-                                } else {
-                                    //failed or ok
-                                }
-                            }
-                        } else {
-                            if(closeing!=null) {
-                                if(this.closeing.result()!=null) {
-                                    closed.Request(new ValueRegister.Request(args.closed_path()+"/"+Util.Long2String(current_resolution_handleable.result.seq),args.token,CreateMode.PERSISTENT));
-                                } else {
-                                    //wait closeing end or failed
-                                }
-                            } else {
-                                if(current_resolution_handleable.result.data.split>0) {
-                                    if(!current_resolution_handleable.result.data.is_closed()) {
-                                        this.closeing=CloseingResolution(current_resolution_handleable.result.seq,current_resolution_handleable.result.data);
-                                    } else {
-                                        dealer.Done(false);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                if(current_resolution_handleable.result.seq>=this.seq) {
+                    //complete
+                    dealer.Done(true);
                 } else {
                     //exception
+                    DIAG.Get.d.Error(current_resolution_handleable.result.seq+":"+this.seq);
                 }
             }
+            next=true;
         }
         return next;
     }
@@ -186,15 +160,17 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
         }
     }
     public static class Result {
-        public final long seq;
         public final Boolean succ;
-        public Result(final long seq,final Boolean succ) {
-            this.seq=seq;
+        public final Resolution resolution;
+        public Result(final Resolution resolution,final Boolean succ) {
+            this.resolution=resolution;
             this.succ=succ;
         }
     }
-    private final Flow<Request,Result> flow=new Flow();
-    private final Versioner regist_handler_check=new Versioner();
+    private final Outer<Request> request=new Outer();
+    private final Dealer<Result> dealer=new Dealer();
+    
+    //private final Versioner regist_handler_check=new Versioner();
     
     public final RSArgs args;
     private final ZKProcess zkprocess;
@@ -206,11 +182,11 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
         this.resolution_sync=new ResolutionSync(args,zkprocess);
         this.zkprocess.AddProcesser(this);
     }
-    public final Handleable<Result> out_handleable() {
-        return flow.out_handleable();
+    public final Request in_request() {
+        return request.set_handleable().result;
     }
-    public final Handleable<Resolution> current_resolution_handleable() {
-        return this.resolution_sync.current_resolution_handleable();
+    public final Handleable<Result> out_handleable() {
+        return dealer.result_handleable();
     }
     public void close() {
         this.zkprocess.DelProcesser(this);
@@ -220,19 +196,19 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
         }
     }
     public void Regist(final Request request) {
-        this.flow.AddIn(request);
+        this.request.Add(request);
     }
     public boolean Do() {
         boolean next=false;
         
         final Handleable<Resolution> current_resolution=resolution_sync.current_resolution_handleable();
         if(current_resolution.result!=null) {
-            final Handleable<Request> request=this.flow.NeedDoing();
+            final Request request=this.request.Fetch();
             if(request!=null) {
-                if(current_resolution.result.seq+1==request.result.seq) {
+                if(current_resolution.result.seq+1==request.seq) {
                     boolean need_new_handler=false;
                     if(regist_handler!=null) {
-                        if(regist_handler.seq!=request.result.seq) {
+                        if(regist_handler.seq!=request.seq) {
                             need_new_handler=true;
                             regist_handler.close();
                         }
@@ -242,34 +218,45 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
                     if(need_new_handler) {
                         regist_handler=new RegistHandler(
                             this.zkprocess,
-                            request.result.seq,
-                            request.result.data,
-                            request.versionable,
+                            request.seq,
+                            request.data,
                             args
                         );
                     } else {
                         //is doing
                     }
-                } else {
-                    if(current_resolution.result.seq+1>request.result.seq) {
-                        this.flow.Out(new Handleable(new Result(request.result.seq,false),request.versionable));
-                    } else {
-                        this.flow.Out(new Handleable(new Result(request.result.seq,null),request.versionable));
-                    }
                 }
                 next=true;
             }
-        }
-        if(regist_handler!=null) {
-            if(regist_handler.Done(resolution_sync.current_resolution_handleable())) {
+            if(this.dealer.Watch(
+                resolution_sync.current_resolution_handleable(),
+                regist_handler==null?null:regist_handler.result_handleable(),
+                this.request.fetch_handleable()
+            )) {
+                do {
+                    if(this.request.fetch_handleable().result!=null) {
+                        if(this.regist_handler!=null) {
+                            if(this.request.fetch_handleable().result.seq==this.regist_handler.seq) {
+                                if(current_resolution.result.data.getToken().equals(this.args.token)) {
+                                    this.dealer.Done(new Result(current_resolution.result,true));
+                                } else {
+                                    this.dealer.Done(new Result(current_resolution.result,false));
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    this.dealer.Done(new Result(current_resolution.result,null));
+                } while(false);
                 next=true;
             }
-            Boolean result=regist_handler_check.Fetch(regist_handler.result_handleable());
-            if(result!=null) {
-                this.flow.Out(new Handleable(new Result(regist_handler.seq,result),regist_handler.seq_versionable));
-                next=true;
+            if(regist_handler!=null) {
+                if(regist_handler.Done(current_resolution)) {
+                    next=true;
+                }
             }
         }
+        
         return next;
     }
 }

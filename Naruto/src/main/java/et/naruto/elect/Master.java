@@ -37,12 +37,44 @@ public class Master implements Processer, AutoCloseable {
                 }
             }
             
-            if(is_pre_leader) {
-                Integer next_seq=null;
+            /*if(is_pre_leader) {
                 if(resolution_surface.current_resolution_handleable().result!=null) {
-                    resolution_surface.current_resolution_handleable().result.seq;
+                    Long request=null;
+                    if(resolution_surface.in_request()!=null) {
+                        if(resolution_surface.current_resolution_handleable().result.seq+1==resolution_surface.in_request().seq) {
+                            if(resolution_surface.out_handleable().result!=null) {
+                                if(resolution_surface.out_handleable().result.seq==resolution_surface.in_request().seq) {
+                                    if(resolution_surface.out_handleable().result.succ!=null) {
+                                        if(resolution_surface.out_handleable().result.succ) {
+                                            //ok
+                                        } else {
+                                            //failed
+                                        }
+                                    } else {
+                                        //exception
+                                    }
+                                } else {
+                                    //wait
+                                }
+                            } else {
+                                //wait
+                            }
+                        } else {
+                            if(resolution_surface.current_resolution_handleable().result.seq==resolution_surface.in_request().seq) {
+                                if(resolution_surface.out_handleable().result!=null) {
+                                    if(resolution_surface.out_handleable().result.seq==resolution_surface.in_request().seq) {
+                                        //if(re)
+                                    } else {
+                                    }
+                                }
+                            } else {
+                            }
+                        }
+                    } else {
+                        request=resolution_surface.current_resolution_handleable().result.seq+1;
+                    }
                 }
-            }
+            }*/
             next=true;
         }
         return next;

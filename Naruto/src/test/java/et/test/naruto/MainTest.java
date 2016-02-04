@@ -189,7 +189,8 @@ public class MainTest {
         
         Assert.assertTrue(Util.GetNodeData(zk,base_path+"/Resolutions").length()>0);
         Assert.assertTrue(Util.GetNodeData(zk,base_path+"/ResolutionsClosed").length()>0);
-        Assert.assertTrue(rss.get(0).current_resolution_handleable().result.seq==-1);
+        Assert.assertTrue(rss.get(0).out_handleable().result.resolution.seq==-1);
+        Assert.assertTrue(rss.get(0).out_handleable().result.succ==null);
         
         ResolutionSurface succ_rs=null;
         int l=10;
@@ -212,12 +213,12 @@ public class MainTest {
             
             int succ_count=0;
             int fail_count=0;
-            int exception_count=0;
+            int unknow_count=0;
             int result_seq_j=0;
             int no_result_seq_j=0;
             for(int i=0;i<rss.size();i++) {
                 ResolutionSurface.Result result=rss.get(i).out_handleable().result;
-                if(result.seq==j) {
+                if(result.resolution.seq==j) {
                     result_seq_j++;
                     if(result.succ!=null) {
                         if(result.succ) {
@@ -227,31 +228,27 @@ public class MainTest {
                             fail_count++;
                         }
                     } else {
-                        exception_count++;
+                        unknow_count++;
                     }
                 } else {
                     no_result_seq_j++;
                 }
                 if(j!=l) {
-                    Assert.assertTrue(rss.get(i).current_resolution_handleable().result.seq==j);
+                    Assert.assertTrue(rss.get(i).out_handleable().result.resolution.seq==j);
                 } else {
-                    Assert.assertTrue(rss.get(i).current_resolution_handleable().result.seq==(j-1));
+                    Assert.assertTrue(rss.get(i).out_handleable().result.resolution.seq==(j-1));
                 }
             }
             
             
             if(j==l) {
-                Assert.assertTrue(no_result_seq_j==1);
-                Assert.assertTrue(result_seq_j>1);
-                Assert.assertTrue(succ_count==0);
-                Assert.assertTrue(fail_count>0);
-                Assert.assertTrue(fail_count>=exception_count);
+                Assert.assertTrue(no_result_seq_j==length);
             } else {
                 DIAG.Get.d.info(String.format("testResolutionSurfaceSurface j is %s ,token is %s ",j,succ_rs.args.token));
-                Assert.assertTrue(no_result_seq_j<=1);
-                Assert.assertTrue(result_seq_j>1);
+                Assert.assertTrue(no_result_seq_j==0);
+                Assert.assertTrue(result_seq_j==length);
                 Assert.assertTrue(succ_count==1);
-                Assert.assertTrue(fail_count>=exception_count);
+                Assert.assertTrue(fail_count+unknow_count==length-1);
             }
         
         }
