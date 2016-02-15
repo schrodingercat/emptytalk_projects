@@ -13,13 +13,18 @@ import et.naruto.versioner.base.Handleable;
 
 public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
     public class Result {
+        public final String path;
         public final byte[] data;
         public final String value;
         public final boolean ephemeral;
-        public Result(final byte[] data,final String value,final boolean ephemeral) {
+        public Result(final String path,final byte[] data,final String value,final boolean ephemeral) {
+            this.path=path;
             this.data=data;
             this.value=value;
             this.ephemeral=ephemeral;
+        }
+        public final String name() {
+            return Paths.get(path).getFileName().toString();
         }
     }
     public final boolean need_watch;
@@ -72,6 +77,7 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
                             value_fetcher_ref.Done(
                                 new Handleable(
                                     new Result(
+                                        req.result,
                                         data,
                                         new String(data,"UTF-8"),
                                         stat.getEphemeralOwner()!=0
@@ -80,10 +86,11 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
                                 )
                             );
                         } catch (Exception e) {
-                            DIAG.Get.d.dig_error("",e);
+                            DIAG.Log.d.dig_error("",e);
                             value_fetcher_ref.Done(
                                 new Handleable(
                                     new Result(
+                                        req.result,
                                         data,
                                         "",
                                         stat.getEphemeralOwner()!=0
@@ -98,6 +105,7 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
                         value_fetcher_ref.Done(
                             new Handleable(
                                 new Result(
+                                    req.result,
                                     null,
                                     "",
                                     false

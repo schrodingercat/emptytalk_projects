@@ -11,7 +11,7 @@ public class Data {
                 return i;
             }
         }
-        DIAG.Get.d.Error();
+        DIAG.Log.d.Error();
         return -1;
     }
     public Data() {
@@ -24,7 +24,7 @@ public class Data {
     }
     public Data(final byte[] data,final String token) {
         if(token.indexOf('@')>-1) {
-            DIAG.Get.d.Error();
+            DIAG.Log.d.Error();
         }
         this.data=new byte[data.length+token.length()+1];
         this.split=token.length();
@@ -32,24 +32,33 @@ public class Data {
             System.arraycopy((token+'@').getBytes("UTF-8"),0,this.data,0,token.length()+1);
             System.arraycopy(data,0,this.data,token.length()+1,data.length);
         } catch (Exception e) {
-            DIAG.Get.d.pass_error("",e);
+            DIAG.Log.d.pass_error("",e);
         }
     }
-    public final boolean is_closed() {
-        return (this.split>0)&&(data_length()==0);
+    public final Boolean is_determined_for_closed() {
+        if(token_length()>0) {
+            if(data_length()==0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return null;
+    }
+    public final String get_determined_token() {
+        if(token_length()>0) {
+            try {
+                return new String(this.data,0,this.split,"UTF-8");
+            } catch (Exception e) {
+                DIAG.Log.d.pass_error("",e);
+            }
+        }
+        return null;
     }
     public final int token_length() {
         return split;
     }
     public final int data_length() {
         return data.length-split-1;
-    }
-    public final String getToken() {
-        try {
-            return new String(this.data,0,this.split,"UTF-8");
-        } catch (Exception e) {
-            DIAG.Get.d.pass_error("",e);
-            return null;
-        }
     }
 }

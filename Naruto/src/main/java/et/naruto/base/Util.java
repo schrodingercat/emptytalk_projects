@@ -17,8 +17,40 @@ public class Util {
         VALUE;
     }
     public static enum DIAG {
-        Get;
+        Log;
         public Diag d=new Diag();
+        public Diag _=d;
+        public Diag __=d;
+        public Diag ___=d;
+        public Diag ____=d;
+        public Diag _____=d;
+        public Diag ______=d;
+        public Diag _______=d;
+        public Diag ________=d;
+        public Diag _________=d;
+        public Diag __________=d;
+        public Diag ___________=d;
+        public Diag ____________=d;
+        public Diag _____________=d;
+        public Diag ______________=d;
+        public Diag _______________=d;
+        public Diag ________________=d;
+        public Diag _________________=d;
+        public Diag __________________=d;
+        public Diag ___________________=d;
+        public Diag ____________________=d;
+        public Diag _____________________=d;
+        public Diag ______________________=d;
+        public Diag _______________________=d;
+        public Diag ________________________=d;
+        public Diag _________________________=d;
+        public Diag __________________________=d;
+        public Diag ___________________________=d;
+        public Diag ____________________________=d;
+        public Diag _____________________________=d;
+        public Diag ______________________________=d;
+        public Diag _______________________________=d;
+        public Diag ________________________________=d;
         /*public Diag d=new Diag() {
             private static final Logger l=Logger.getLogger(DIAG.class);
             protected void DoInfo(String msg){
@@ -87,11 +119,20 @@ public class Util {
         public void info(String msg) {
             out(LEVEL.INFO,msg);
         }
+        public void I(String msg,Object... args) {
+            info(String.format(msg,args));
+        }
         public void debug(String msg) {
             out(LEVEL.DEBUG,msg);
         }
+        public void D(String msg,Object... args) {
+            debug(String.format(msg,args));
+        }
         public void error(String msg) {
             out(LEVEL.ERROR,msg);
+        }
+        public void E(String msg,Object... args) {
+            error(String.format(msg,args));
         }
         
         public RuntimeException dig_error(String msg,Throwable e) {
@@ -120,18 +161,18 @@ public class Util {
             }
         }
         
-        public void Error(String info) {
-            Assert(false, info);
-        }
         public void Error() {
             Assert(false, "");
+        }
+        public void Error(String msg,Object... args) {
+            Assert(false,String.format(msg,args));
         }
     }
     public static void Sleep(long t) {
         try {
             Thread.sleep(t);
         } catch (Exception e) {
-            DIAG.Get.d.pass_error("",e);
+            DIAG.Log.d.pass_error("",e);
         }
     }
     public static class ZKArgs {
@@ -144,7 +185,7 @@ public class Util {
             try {
                 return new ZooKeeper("localhost:2181",10*1000,null);
             } catch (Exception e) {
-                DIAG.Get.d.pass_error("",e);
+                DIAG.Log.d.pass_error("",e);
                 return null;
             }
         }
@@ -157,7 +198,7 @@ public class Util {
             }
             zk.delete(path,-1);
         } catch (Exception e) {
-            DIAG.Get.d.dig_error("",e);
+            DIAG.Log.d.dig_error("",e);
         }
     }
     public static void ForceCreateNode(ZooKeeper zk,String path,String data) {
@@ -167,7 +208,7 @@ public class Util {
         try {
             return new String(zk.getData(path,false,null),"UTF-8");
         } catch (Exception e) {
-            DIAG.Get.d.dig_error("",e);
+            DIAG.Log.d.dig_error("",e);
             return null;
         }
     }
@@ -175,7 +216,7 @@ public class Util {
         try {
             return new TreeSet(zk.getChildren(path,false));
         } catch (Exception e) {
-            DIAG.Get.d.dig_error("",e);
+            DIAG.Log.d.dig_error("",e);
             return null;
         }
     }
@@ -183,7 +224,7 @@ public class Util {
         try {
             zk.create(path,data.getBytes(),Ids.OPEN_ACL_UNSAFE,persist?CreateMode.PERSISTENT:CreateMode.EPHEMERAL);
         } catch (Exception e) {
-            DIAG.Get.d.dig_error("",e);
+            DIAG.Log.d.dig_error("",e);
         }
     }
     public static String Long2String(final long value) {
@@ -200,7 +241,7 @@ public class Util {
         try {
             return new String(data,"UTF-8");
         } catch (Exception e) {
-            DIAG.Get.d.pass_error("",e);
+            DIAG.Log.d.pass_error("",e);
             return null;
         }
     }

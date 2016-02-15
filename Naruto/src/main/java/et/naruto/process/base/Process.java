@@ -31,7 +31,7 @@ public class Process extends Thread {
             try {
                 super.join();
             } catch (Exception e) {
-                Util.DIAG.Get.d.pass_error("",e);
+                Util.DIAG.Log.d.pass_error("",e);
             } finally {
             }
         }
@@ -61,7 +61,7 @@ public class Process extends Thread {
                         try {
                             this.wait(200);
                         } catch (Exception e) {
-                            DIAG.Get.d.pass_error("",e);
+                            DIAG.Log.d.pass_error("",e);
                         }
                     }
                 }

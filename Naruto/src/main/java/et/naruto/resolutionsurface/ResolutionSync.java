@@ -33,8 +33,8 @@ class CurrentResolutionGenerator {
                         Data data=new Data();
                         if(current_resolution_fetcher!=null) {
                             if(current_resolution_fetcher.request()!=null) {
-                                if(current_resolution_fetcher.name().equals(last)) {
-                                    if(current_resolution_fetcher.result()!=null) {
+                                if(current_resolution_fetcher.result()!=null) {
+                                    if(current_resolution_fetcher.result().name().equals(last)) {
                                         data=new Data(current_resolution_fetcher.result().data);
                                     }
                                 }

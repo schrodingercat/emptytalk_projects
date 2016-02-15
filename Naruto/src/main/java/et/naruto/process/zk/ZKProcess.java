@@ -30,7 +30,7 @@ public class ZKProcess extends Process {
         try {
             zk.close();
         } catch (Exception e) {
-            Util.DIAG.Get.d.pass_error("",e);
+            Util.DIAG.Log.d.pass_error("",e);
         }
     }
 }

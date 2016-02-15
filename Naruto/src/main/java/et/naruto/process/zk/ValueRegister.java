@@ -68,7 +68,7 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
                         r=new Result(false);
                         break;
                     default:
-                        DIAG.Get.d.error(path+" : "+KeeperException.create(rc).getMessage());
+                        DIAG.Log.d.error(path+" : "+KeeperException.create(rc).getMessage());
                         r=new Result(null);
                         break;
                     }

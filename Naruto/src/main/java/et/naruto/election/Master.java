@@ -146,14 +146,14 @@ class LeaderCatch {
                             if(resolution_register_handler.result.seq==follower_resolution_handler.result.seq) {
                                 if(follower_resolution_handler.result.data!=null) {
                                     this.dealer.Done(new LeaderInfo(follower_resolution_handler.result.data));
-                                    DIAG.Get.d.info(String.format("%s leader catched",args.toString()));
+                                    DIAG.Log.d.info(String.format("%s leader catched",args.toString()));
                                     return true;
                                 }
                             }
                         }
                     }
                     this.dealer.Done(new LeaderInfo(null));
-                    DIAG.Get.d.info(String.format("%s preleader catched",args.toString()));
+                    DIAG.Log.d.info(String.format("%s preleader catched",args.toString()));
                     return true;
                 }
             }
@@ -206,13 +206,13 @@ abstract class ResolutionRegister {
                 if(need_resolution.need_closed!=null) {
                     if(this.closeing==null) {
                         this.closeing=this.CloseResolution(this.seq-1,need_resolution.need_closed);
-                        DIAG.Get.d.debug(String.format("%s closeing %s resolution",args.toString(),seq));
+                        DIAG.Log.d.debug(String.format("%s closeing %s resolution",args.toString(),seq));
                     }
                 }
                 if(need_resolution.need_registed!=null) {
                     if(this.registing==null) {
                         this.registing=this.NewResolution(seq,need_resolution.need_registed);
-                        DIAG.Get.d.debug(String.format("%s registing %s resolution",args.toString(),seq));
+                        DIAG.Log.d.debug(String.format("%s registing %s resolution",args.toString(),seq));
                     }
                 }
             }
@@ -223,7 +223,7 @@ abstract class ResolutionRegister {
             Boolean is_closeing=this.closeing.Fetch();
             if(is_closeing!=null) {
                 ValueClosed();
-                DIAG.Get.d.debug(String.format("%s closed %s resolution",args.toString(),seq));
+                DIAG.Log.d.debug(String.format("%s closed %s resolution",args.toString(),seq));
                 next=true;
             }
         }
@@ -231,7 +231,7 @@ abstract class ResolutionRegister {
             byte[] new_bytes=this.registing.Fetch();
             if(new_bytes!=null) {
                 ValueRegisted(new_bytes);
-                DIAG.Get.d.debug(String.format("%s registed %s resolution",args.toString(),seq));
+                DIAG.Log.d.debug(String.format("%s registed %s resolution",args.toString(),seq));
                 next=true;
             }
         }
@@ -239,7 +239,7 @@ abstract class ResolutionRegister {
         if(this.registed!=null) {
             ValueRegister.Result result=this.dealer.SyncDone(this.registed.handleable());
             if(result!=null) {
-                DIAG.Get.d.debug(String.format("%s output %s resolution",args.toString(),seq));
+                DIAG.Log.d.debug(String.format("%s output %s resolution",args.toString(),seq));
                 next=true;
             }
         }
@@ -251,7 +251,7 @@ abstract class ResolutionRegister {
     
     private void ValueClosed() {
         if(this.closed!=null) {
-            DIAG.Get.d.Error(""+seq);
+            DIAG.Log.d.Error(""+seq);
         }
         this.closed=new ValueRegister(
             zkprocess,
@@ -262,13 +262,13 @@ abstract class ResolutionRegister {
             )
         ) {
             public void DoCallback(final Result result) {
-                DIAG.Get.d.debug(String.format("%s closed %s resolution callback",args.toString(),seq));
+                DIAG.Log.d.debug(String.format("%s closed %s resolution callback",args.toString(),seq));
             }
         };
     }
     private void ValueRegisted(final byte[] data) {
         if(this.registed!=null) {
-            DIAG.Get.d.Error(""+seq);
+            DIAG.Log.d.Error(""+seq);
         }
         this.registed=new ValueRegister(
             zkprocess,
@@ -279,7 +279,7 @@ abstract class ResolutionRegister {
             )
         ) {
             public void DoCallback(final Result result) {
-                DIAG.Get.d.debug(String.format("%s registed %s resolution callback",args.toString(),seq));
+                DIAG.Log.d.debug(String.format("%s registed %s resolution callback",args.toString(),seq));
             }
         };
     }

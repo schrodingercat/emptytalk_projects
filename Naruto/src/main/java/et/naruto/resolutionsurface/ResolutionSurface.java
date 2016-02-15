@@ -6,7 +6,6 @@ import org.apache.zookeeper.CreateMode;
 
 import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
-import et.naruto.base.Util.UNIQ;
 import et.naruto.process.base.Processer;
 import et.naruto.process.zk.ValueRegister;
 import et.naruto.process.zk.ZKProcess;
@@ -15,45 +14,46 @@ import et.naruto.versioner.Outer;
 import et.naruto.versioner.base.Handleable;
 import et.naruto.versioner.base.Handler;
 
-class RegistHandler implements AutoCloseable {
-    //public static class Result {
-        //public final long seq;
-        //public final boolean arrive;
-        //public Result(/*final long seq,*/final boolean arrive) {
-            //this.seq=seq;
-         //   this.arrive=arrive;
-        //}
-    //}
+class RegistHandler implements AutoCloseable, Processer {
     public final long seq;
     public final byte[] byte_data;
     private final RSArgs args;
     private final ZKProcess zkprocess;
+    private final ResolutionSync resolution_sync;
     private final Dealer<Boolean> dealer;
     
     private final ValueRegister closed;
     private final ValueRegister registed;
     private Handler<Boolean> closeing=null;
-    public RegistHandler(final ZKProcess zkprocess,final long seq,final byte[] byte_data,final RSArgs args) {
+    public RegistHandler(final ZKProcess zkprocess,final ResolutionSync resolution_sync,final long seq,final byte[] byte_data,final RSArgs args) {
         this.dealer=new Dealer();
         this.seq=seq;
         this.byte_data=byte_data;
-        //this.seq_versionable=seq_versionable;
         this.args=args;
         this.zkprocess=zkprocess;
+        this.resolution_sync=resolution_sync;
         this.closed=new ValueRegister(zkprocess,null);
         this.registed=new ValueRegister(zkprocess,null);
+        this.zkprocess.AddProcesser(this);
+        
+        if(seq==10) {
+            if(this.resolution_sync.current_resolution_handleable().result.seq==8) {
+                int i=0;
+                i++;
+            }
+        }
     }
     public final Handleable<Boolean> result_handleable() {
         return dealer.result_handleable();
     }
     public void close() {
+        this.zkprocess.DelProcesser(this);
         this.closed.Close();
         this.registed.Close();
     }
-    public boolean Done(
-        final Handleable<Resolution> current_resolution_handleable
-    ) {
+    public boolean Do() {
         boolean next=false;
+        Handleable<Resolution> current_resolution_handleable=this.resolution_sync.current_resolution_handleable();
         if(dealer.Watch(
             current_resolution_handleable.versionable,
             closed.result_versionable(),
@@ -119,12 +119,15 @@ class RegistHandler implements AutoCloseable {
                                 //wait closeing end or failed
                             }
                         } else {
-                            if(current_resolution_handleable.result.data.split>0) {
-                                if(!current_resolution_handleable.result.data.is_closed()) {
+                            final Boolean is_determined_for_closed=current_resolution_handleable.result.data.is_determined_for_closed();
+                            if(is_determined_for_closed!=null) {
+                                if(!is_determined_for_closed) {
                                     this.closeing=CloseingResolution(current_resolution_handleable.result.seq,current_resolution_handleable.result.data);
                                 } else {
                                     dealer.Done(false);
                                 }
+                            } else {
+                                //wait for resolution determined
                             }
                         }
                     }
@@ -135,7 +138,7 @@ class RegistHandler implements AutoCloseable {
                     dealer.Done(true);
                 } else {
                     //exception
-                    DIAG.Get.d.Error(current_resolution_handleable.result.seq+":"+this.seq);
+                    DIAG.Log.d.Error(current_resolution_handleable.result.seq+":"+this.seq);
                 }
             }
             next=true;
@@ -158,19 +161,24 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
             this.data=data;
             this.seq=seq;
         }
+        public final String toString() {
+            return String.format("Request(l:%s,seq:%s)",data.length,seq);
+        }
     }
     public static class Result {
-        public final Boolean succ;
+        public final boolean succ;
         public final Resolution resolution;
-        public Result(final Resolution resolution,final Boolean succ) {
+        public Result(final Resolution resolution,final boolean succ) {
             this.resolution=resolution;
             this.succ=succ;
+        }
+        public final String toString() {
+            return String.format("Result(%s,%s)",succ,resolution);
         }
     }
     private final Outer<Request> request=new Outer();
     private final Dealer<Result> dealer=new Dealer();
     
-    //private final Versioner regist_handler_check=new Versioner();
     
     public final RSArgs args;
     private final ZKProcess zkprocess;
@@ -181,6 +189,9 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
         this.zkprocess=zkprocess;
         this.resolution_sync=new ResolutionSync(args,zkprocess);
         this.zkprocess.AddProcesser(this);
+    }
+    public final String toString() {
+        return String.format("ResolutionSurface(%s,%s)",request,dealer);
     }
     public final Request in_request() {
         return request.set_handleable().result;
@@ -218,6 +229,7 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
                     if(need_new_handler) {
                         regist_handler=new RegistHandler(
                             this.zkprocess,
+                            resolution_sync,
                             request.seq,
                             request.data,
                             args
@@ -231,29 +243,25 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
             if(this.dealer.Watch(
                 resolution_sync.current_resolution_handleable(),
                 regist_handler==null?null:regist_handler.result_handleable(),
-                this.request.fetch_handleable()
+                this.request.set_handleable()
             )) {
-                do {
-                    if(this.request.fetch_handleable().result!=null) {
-                        if(this.regist_handler!=null) {
-                            if(this.request.fetch_handleable().result.seq==this.regist_handler.seq) {
-                                if(current_resolution.result.data.getToken().equals(this.args.token)) {
-                                    this.dealer.Done(new Result(current_resolution.result,true));
-                                } else {
-                                    this.dealer.Done(new Result(current_resolution.result,false));
-                                }
-                                break;
-                            }
+                if((this.request.set_handleable().result==null)||(current_resolution.result.seq>=this.request.set_handleable().result.seq)) {
+                    String determined_token=current_resolution.result.data.get_determined_token();
+                    if(determined_token!=null) {
+                        if(determined_token.equals(this.args.token)) {
+                            this.dealer.Done(new Result(current_resolution.result,true));
+                        } else {
+                            this.dealer.Done(new Result(current_resolution.result,false));
+                        }
+                    } else {
+                        if(current_resolution.result.seq==-1) {
+                            this.dealer.Done(new Result(current_resolution.result,false));
+                        } else {
+                            //wait for token determined.
                         }
                     }
-                    this.dealer.Done(new Result(current_resolution.result,null));
-                } while(false);
-                next=true;
-            }
-            if(regist_handler!=null) {
-                if(regist_handler.Done(current_resolution)) {
-                    next=true;
                 }
+                next=true;
             }
         }
         

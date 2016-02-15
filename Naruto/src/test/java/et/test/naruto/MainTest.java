@@ -36,7 +36,7 @@ public class MainTest {
     public static String base_path="/naruto_test";
     public static ZooKeeper zk=zkargs.Create();
     public static Args CreateArgs(final int seq) {
-        return new Args(base_path,"floor4:localhost", "server"+seq);
+        return new Args(base_path,"floor4:localhost", "server("+seq+")");
     }
     @Before
     public void setUp() {
@@ -190,7 +190,7 @@ public class MainTest {
         Assert.assertTrue(Util.GetNodeData(zk,base_path+"/Resolutions").length()>0);
         Assert.assertTrue(Util.GetNodeData(zk,base_path+"/ResolutionsClosed").length()>0);
         Assert.assertTrue(rss.get(0).out_handleable().result.resolution.seq==-1);
-        Assert.assertTrue(rss.get(0).out_handleable().result.succ==null);
+        Assert.assertTrue(rss.get(0).out_handleable().result.succ==false);
         
         ResolutionSurface succ_rs=null;
         int l=10;
@@ -213,25 +213,24 @@ public class MainTest {
             
             int succ_count=0;
             int fail_count=0;
-            int unknow_count=0;
             int result_seq_j=0;
             int no_result_seq_j=0;
+            int closed_count=0;
             for(int i=0;i<rss.size();i++) {
                 ResolutionSurface.Result result=rss.get(i).out_handleable().result;
                 if(result.resolution.seq==j) {
                     result_seq_j++;
-                    if(result.succ!=null) {
-                        if(result.succ) {
-                            succ_count++;
-                            succ_rs=rss.get(i);
-                        } else {
-                            fail_count++;
-                        }
+                    if(result.succ) {
+                        succ_count++;
+                        succ_rs=rss.get(i);
                     } else {
-                        unknow_count++;
+                        fail_count++;
                     }
                 } else {
                     no_result_seq_j++;
+                }
+                if(result.resolution.data.is_determined_for_closed()) {
+                    closed_count++;
                 }
                 if(j!=l) {
                     Assert.assertTrue(rss.get(i).out_handleable().result.resolution.seq==j);
@@ -243,15 +242,20 @@ public class MainTest {
             
             if(j==l) {
                 Assert.assertTrue(no_result_seq_j==length);
+                Assert.assertTrue(closed_count==length);
             } else {
-                DIAG.Get.d.info(String.format("testResolutionSurfaceSurface j is %s ,token is %s ",j,succ_rs.args.token));
+                DIAG.Log.d.info(String.format("testResolutionSurfaceSurface j is %s ,token is %s ",j,succ_rs.args.token));
                 Assert.assertTrue(no_result_seq_j==0);
                 Assert.assertTrue(result_seq_j==length);
                 Assert.assertTrue(succ_count==1);
-                Assert.assertTrue(fail_count+unknow_count==length-1);
+                Assert.assertTrue(fail_count==length-1);
+                if(j==l-1) {
+                    Assert.assertTrue(closed_count==length);
+                }
             }
         
         }
+        
         
         process.Stop();
         
@@ -303,7 +307,7 @@ public class MainTest {
                         int i=0;
                         i++;
                     }
-                    DIAG.Get.d.info(String.format("Stop the pre_leader server: %s", pre_leader));
+                    DIAG.Log.d.info(String.format("Stop the pre_leader server: %s", pre_leader));
                     pre_leader.Stop();
                     if(!pre_leader.master.IsLeader()) {
                          pure_pre_leader_count++;
@@ -312,7 +316,71 @@ public class MainTest {
                 }
             } else {
                 if(leader_count>=1) {
-                    DIAG.Get.d.info(String.format("Stop the leader server: %s", leader));
+                    DIAG.Log.d.info(String.format("Stop the leader server: %s", leader));
+                    leader.Stop();
+                    ss.remove(leader);
+                }
+            }
+            if(ss.size()==0) {
+                break;
+            }
+        }
+        Assert.assertTrue(Util.GetNodeChilds(zk,base_path+"/Resolutions").size()>=(length-pure_pre_leader_count));
+        Assert.assertTrue(Util.GetNodeChilds(zk,base_path+"/ResolutionsClosed").size()>=(length-1-pure_pre_leader_count));
+    }
+    @Test
+    public void testElectServer() {
+        Util.ForceCreateNode(zk,base_path,"server_test",true);
+        final ArrayList<et.naruto.elect.Server> ss=new ArrayList();
+        long length=80;
+        for(int i=0;i<length;i++) {
+            ss.add(new et.naruto.elect.Server(CreateArgs(i),zkargs));
+        }
+        for(et.naruto.elect.Server s:ss) {
+            s.Start();
+        }
+        Util.Sleep(500);
+        String resolutions_data=Util.GetNodeData(zk,base_path+"/Resolutions");
+        Assert.assertTrue(!resolutions_data.isEmpty());
+        int pure_pre_leader_count=0;
+        while(true) {
+            Util.Sleep(50);
+            int pre_leader_count=0;
+            int leader_count=0;
+            et.naruto.elect.Server pre_leader=null;
+            et.naruto.elect.Server leader=null;
+            for(et.naruto.elect.Server s:ss) {
+                if(s.master.IsPreLeader()) {
+                    pre_leader_count++;
+                    pre_leader=s;
+                }
+                if(s.master.IsLeader()) {
+                    leader_count++;
+                    leader=s;
+                }
+            }
+            if(pre_leader_count>1) {
+                Assert.assertTrue(false);
+            }
+            if(leader_count>1) {
+                Assert.assertTrue(false);
+            }
+            if(ss.size()%2==1) {
+                if(pre_leader_count>=1) {
+                    if(ss.size()==21) {
+                        int i=0;
+                        i++;
+                    }
+                    DIAG.Log.d.info(String.format("**************************Stop the pre_leader server: %s**************************", pre_leader));
+                    pre_leader.Stop();
+                    if(!pre_leader.master.IsLeader()) {
+                         pure_pre_leader_count++;
+                    }
+                    ss.remove(pre_leader);
+                }
+            } else {
+                if(leader_count>=1) {
+                    DIAG.Log.d.info(String.format("**************************Stop the leader server: %s************************", leader));
                     leader.Stop();
                     ss.remove(leader);
                 }

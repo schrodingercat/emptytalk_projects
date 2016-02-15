@@ -148,7 +148,7 @@ public abstract class RegistersUpdater implements Processer {
                         this.zkprocess.tm.schedule(
                             new TimerTask() {
                                 public void run() {
-                                    DIAG.Get.d.info(String.format("active has been created, but not %s",args.GetServerId()));
+                                    DIAG.Log.d.info(String.format("active has been created, but not %s",args.GetServerId()));
                                     active_register.ReRequest();
                                 }
                             },
