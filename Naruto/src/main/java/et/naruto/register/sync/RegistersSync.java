@@ -2,7 +2,7 @@ package et.naruto.register.sync;
 
 import org.apache.zookeeper.CreateMode;
 
-import et.naruto.election.Args;
+import et.naruto.elect.Args;
 import et.naruto.process.zk.NodeFetcher;
 import et.naruto.process.zk.ValueRegister;
 import et.naruto.process.zk.ZKProcess;

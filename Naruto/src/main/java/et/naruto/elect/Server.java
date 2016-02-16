@@ -1,7 +1,6 @@
 package et.naruto.elect;
 
 import et.naruto.base.Util.ZKArgs;
-import et.naruto.election.Args;
 import et.naruto.process.zk.ZKProcess;
 
 public class Server {

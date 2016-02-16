@@ -1,7 +1,7 @@
 package et.naruto.register;
 
 import et.naruto.base.Util.ZKArgs;
-import et.naruto.election.Args;
+import et.naruto.elect.Args;
 import et.naruto.process.zk.ZKProcess;
 import et.naruto.register.sync.RegistersSync;
 

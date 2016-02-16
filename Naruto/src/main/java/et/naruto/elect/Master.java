@@ -1,7 +1,6 @@
 package et.naruto.elect;
 
 import et.naruto.base.Util.DIAG;
-import et.naruto.election.Args;
 import et.naruto.process.base.Processer;
 import et.naruto.process.zk.ZKProcess;
 import et.naruto.resolutionsurface.RSArgs;

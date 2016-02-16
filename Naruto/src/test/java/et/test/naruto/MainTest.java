@@ -13,8 +13,7 @@ import org.junit.Test;
 import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
 import et.naruto.base.Util.ZKArgs;
-import et.naruto.election.Args;
-import et.naruto.election.Server;
+import et.naruto.elect.Args;
 import et.naruto.process.zk.ChildsFetcher;
 import et.naruto.process.zk.ValueFetcher;
 import et.naruto.process.zk.ValueRegister;
@@ -264,70 +263,6 @@ public class MainTest {
         }
     }
     
-    @Test
-    public void testElectionServer() {
-        Util.ForceCreateNode(zk,base_path,"server_test",true);
-        final ArrayList<Server> ss=new ArrayList();
-        long length=50;
-        for(int i=0;i<length;i++) {
-            ss.add(new Server(CreateArgs(i),zkargs));
-        }
-        for(Server s:ss) {
-            s.Start();
-        }
-        Util.Sleep(500);
-        String resolutions_data=Util.GetNodeData(zk,base_path+"/Resolutions");
-        Assert.assertTrue(!resolutions_data.isEmpty());
-        int pure_pre_leader_count=0;
-        while(true) {
-            Util.Sleep(50);
-            int pre_leader_count=0;
-            int leader_count=0;
-            Server pre_leader=null;
-            Server leader=null;
-            for(Server s:ss) {
-                if(s.master.IsPreLeader()) {
-                    pre_leader_count++;
-                    pre_leader=s;
-                }
-                if(s.master.IsLeader()) {
-                    leader_count++;
-                    leader=s;
-                }
-            }
-            if(pre_leader_count>1) {
-                Assert.assertTrue(false);
-            }
-            if(leader_count>1) {
-                Assert.assertTrue(false);
-            }
-            if(ss.size()%2==1) {
-                if(pre_leader_count>=1) {
-                    if(ss.size()==21) {
-                        int i=0;
-                        i++;
-                    }
-                    DIAG.Log.d.info(String.format("Stop the pre_leader server: %s", pre_leader));
-                    pre_leader.Stop();
-                    if(!pre_leader.master.IsLeader()) {
-                         pure_pre_leader_count++;
-                    }
-                    ss.remove(pre_leader);
-                }
-            } else {
-                if(leader_count>=1) {
-                    DIAG.Log.d.info(String.format("Stop the leader server: %s", leader));
-                    leader.Stop();
-                    ss.remove(leader);
-                }
-            }
-            if(ss.size()==0) {
-                break;
-            }
-        }
-        Assert.assertTrue(Util.GetNodeChilds(zk,base_path+"/Resolutions").size()>=(length-pure_pre_leader_count));
-        Assert.assertTrue(Util.GetNodeChilds(zk,base_path+"/ResolutionsClosed").size()>=(length-1-pure_pre_leader_count));
-    }
     @Test
     public void testElectServer() {
         Util.ForceCreateNode(zk,base_path,"server_test",true);

@@ -5,7 +5,7 @@ import java.util.TimerTask;
 import org.apache.zookeeper.CreateMode;
 
 import et.naruto.base.Util.DIAG;
-import et.naruto.election.Args;
+import et.naruto.elect.Args;
 import et.naruto.process.base.Processer;
 import et.naruto.process.zk.ValueRegister;
 import et.naruto.process.zk.ZKProcess;
