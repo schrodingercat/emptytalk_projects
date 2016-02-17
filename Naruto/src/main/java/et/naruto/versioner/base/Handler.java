@@ -50,7 +50,7 @@ public class Handler<RET> {
     public final RET Sync(final Handleable<RET> handleable) {
         Handleable<RET> h=handleable.Output(this.handleable_ref.get().versionable);
         if(h!=null) {
-            this.handleable_ref.set(h);
+            Assign(h);
             return h.result;
         }
         return null;

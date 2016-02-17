@@ -33,4 +33,11 @@ public class Outer<RET> {
     public final RET Fetch() {
         return fetch.Fetch(this.set.handleable());
     }
+    public final Handleable<RET> FetchHandleable() {
+        final Handleable<RET> h=this.set.handleable();
+        if(fetch.Watch(h.versionable)) {
+            return h;
+        }
+        return null;
+    }
 }

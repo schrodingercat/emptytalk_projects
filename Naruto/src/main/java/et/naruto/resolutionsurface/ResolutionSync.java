@@ -90,7 +90,7 @@ public class ResolutionSync implements Processer, AutoCloseable {
     }
     public boolean Do() {
         boolean next=false;
-        final ChildsFetcher.Result resolutions=this.resolutions_fetcher_versioner.Fetch(this.resolutions_fetcher.handleable());
+        final ChildsFetcher.Result resolutions=this.resolutions_fetcher_versioner.Fetch(this.resolutions_fetcher.result_handleable());
         if(resolutions!=null) {
             if(!resolutions.exist) {
                 zkprocess.zk.create(
@@ -111,7 +111,7 @@ public class ResolutionSync implements Processer, AutoCloseable {
             }
             next=true;
         }
-        final ChildsFetcher.Result resolutions_closed=this.resolutions_closed_fetcher_versioner.Fetch(this.resolutions_closed_fetcher.handleable());
+        final ChildsFetcher.Result resolutions_closed=this.resolutions_closed_fetcher_versioner.Fetch(this.resolutions_closed_fetcher.result_handleable());
         if(resolutions_closed!=null) {
             if(!resolutions_closed.exist) {
                 zkprocess.zk.create(
@@ -127,8 +127,8 @@ public class ResolutionSync implements Processer, AutoCloseable {
         }
         
         if(current_resolution_generator.Done(
-            resolutions_fetcher.handleable(),
-            resolutions_closed_fetcher.handleable(),
+            resolutions_fetcher.result_handleable(),
+            resolutions_closed_fetcher.result_handleable(),
             current_resolution_fetcher
         )) {
             next=true;

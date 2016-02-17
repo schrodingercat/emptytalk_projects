@@ -42,16 +42,16 @@ public class Seat implements Processer, AutoCloseable {
     public boolean Do() {
         boolean next=false;
         if(this.dealer.Watch(
-            flag_fetcher.handleable()
+            flag_fetcher.result_handleable()
         )) {
-            if(flag_fetcher.handleable().result!=null) {
-                if(flag_fetcher.handleable().result.value.isEmpty()) {
+            if(flag_fetcher.result_handleable().result!=null) {
+                if(flag_fetcher.result_handleable().result.value.isEmpty()) {
                     DIAG.Log.________________________________.D(
                         "Seat is empty %s request the seat.",
                         Util.Bytes2String(flag_register.request().want_value));
                     flag_register.ReRequest();
                 } else {
-                    if(Arrays.equals(flag_fetcher.handleable().result.data,flag_register.request().want_value)) {
+                    if(Arrays.equals(flag_fetcher.result_handleable().result.data,flag_register.request().want_value)) {
                         DIAG.Log.________________________________.D(
                             "%s Get the seat.",
                             Util.Bytes2String(flag_register.request().want_value));
