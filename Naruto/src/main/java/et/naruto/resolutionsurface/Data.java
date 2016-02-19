@@ -35,6 +35,9 @@ public class Data {
             DIAG.Log.d.pass_error("",e);
         }
     }
+    public final String toString() {
+        return String.format("Data(%s:%s)",get_determined_token(),data_length());
+    }
     public final Boolean is_determined_for_closed() {
         if(token_length()>0) {
             if(data_length()==0) {

@@ -4,6 +4,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 import et.naruto.base.Util;
+import et.naruto.base.Util.DIAG;
 import et.naruto.process.base.Processer;
 import et.naruto.process.zk.ChildsFetcher;
 import et.naruto.process.zk.ValueFetcher;
@@ -14,6 +15,13 @@ import et.naruto.versioner.base.Versioner;
 
 class CurrentResolutionGenerator {
     public final Dealer<Resolution> dealer=new Dealer();
+    public final RSArgs args;
+    public CurrentResolutionGenerator(final RSArgs args) {
+        this.args=args;
+    }
+    public final String toString() {
+        return String.format("Generator(%s,%s)",args,dealer);
+    }
     public boolean Done(
             final Handleable<ChildsFetcher.Result> resolutions_fetcher,
             final Handleable<ChildsFetcher.Result> resolutions_closed_fetcher,
@@ -40,11 +48,29 @@ class CurrentResolutionGenerator {
                                 }
                             }
                         }
-                        this.dealer.Done(new Resolution(last,data,closed));
+                        final Resolution resolution=new Resolution(last,data,closed);
+                        DIAG.Log.________________________________________________________________.D(
+                            "%s resolutions fetched, Done %s.",
+                            this,
+                            resolution);
+                        
+                        this.dealer.Done(resolution);
                     } else {
+                        DIAG.Log.________________________________________________________________.D(
+                            "%s resolutions is empty, Done Resolution(-1,Data(),true).",
+                            this);
+                        
                         this.dealer.Done(new Resolution(Util.Long2String(-1),new Data(),true));
                     }
+                } else {
+                    DIAG.Log.________________________________________________________________.D(
+                        "%s resolutions closed fetching, waiting.",
+                        this);
                 }
+            } else {
+                DIAG.Log.________________________________________________________________.D(
+                    "%s resolutions fetching, waiting.",
+                    this);
             }
             return true;
         }
@@ -55,7 +81,7 @@ class CurrentResolutionGenerator {
 public class ResolutionSync implements Processer, AutoCloseable {
     @Override
     public String toString() {
-        return String.format("ResolutionSeqSync(R=%s,RC=%s,current=%s)",resolutions_fetcher,resolutions_closed_fetcher,current_resolution_fetcher);
+        return String.format("ResolutionSync(%s,R=%s,RC=%s,C=%s)",this.args,resolutions_fetcher,resolutions_closed_fetcher,current_resolution_fetcher);
     }
     
     private final RSArgs args;
@@ -66,7 +92,7 @@ public class ResolutionSync implements Processer, AutoCloseable {
     private final Versioner resolutions_closed_fetcher_versioner=new Versioner();
     private final ValueFetcher current_resolution_fetcher;
     
-    private final CurrentResolutionGenerator current_resolution_generator=new CurrentResolutionGenerator();
+    private final CurrentResolutionGenerator current_resolution_generator;
     
     public final Handleable<Resolution> current_resolution_handleable() {
         return this.current_resolution_generator.dealer.result_handleable();
@@ -75,6 +101,7 @@ public class ResolutionSync implements Processer, AutoCloseable {
     public ResolutionSync(final RSArgs args,final ZKProcess zkprocess) {
         this.args=args;
         this.zkprocess=zkprocess;
+        this.current_resolution_generator=new CurrentResolutionGenerator(args);
         this.resolutions_fetcher=new ChildsFetcher(this.zkprocess,args.path);
         this.resolutions_closed_fetcher=new ChildsFetcher(this.zkprocess,args.closed_path());
         this.current_resolution_fetcher=new ValueFetcher(this.zkprocess,null,false);
@@ -93,6 +120,10 @@ public class ResolutionSync implements Processer, AutoCloseable {
         final ChildsFetcher.Result resolutions=this.resolutions_fetcher_versioner.Fetch(this.resolutions_fetcher.result_handleable());
         if(resolutions!=null) {
             if(!resolutions.exist) {
+                DIAG.Log.________________________________________________________________.D(
+                    "%s Resolution path not exist, create it.",
+                    this);
+                
                 zkprocess.zk.create(
                     this.args.path,
                     this.args.token.getBytes(),
@@ -101,12 +132,27 @@ public class ResolutionSync implements Processer, AutoCloseable {
                     null,
                     null
                 );
+                
             } else {
                 if(resolutions.childs.size()>0) {
                     String last_path=this.args.path+"/"+resolutions.childs.last();
                     if((current_resolution_fetcher.request()==null)||(!current_resolution_fetcher.request().equals(last_path))) {
+                        DIAG.Log.________________________________________________________________.D(
+                            "%s fetch Current resolution for %s.",
+                            this,
+                            last_path);
+                        
                         current_resolution_fetcher.Request(last_path);
+                    } else {
+                        DIAG.Log.________________________________________________________________.D(
+                            "%s Current resolution fetching for %s, waiting.",
+                            this,
+                            last_path);
                     }
+                } else {
+                    DIAG.Log.________________________________________________________________.D(
+                        "%s Resolution path are empty, ignore.",
+                        this);
                 }
             }
             next=true;
@@ -114,6 +160,10 @@ public class ResolutionSync implements Processer, AutoCloseable {
         final ChildsFetcher.Result resolutions_closed=this.resolutions_closed_fetcher_versioner.Fetch(this.resolutions_closed_fetcher.result_handleable());
         if(resolutions_closed!=null) {
             if(!resolutions_closed.exist) {
+                DIAG.Log.________________________________________________________________.D(
+                    "%s ResolutionClosed path not exist, create it.",
+                    this);
+                
                 zkprocess.zk.create(
                     this.args.closed_path(),
                     this.args.token.getBytes(),

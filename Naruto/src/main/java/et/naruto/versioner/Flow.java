@@ -7,23 +7,24 @@ import et.naruto.versioner.base.Versioner;
 
 
 public class Flow<REQ,RET> {
-    private final Handler<REQ> in;
-    private final Versioner doing;
-    private final Handler<RET> out;
-    private Flow(final Handler<REQ> in,final Versioner doing,final Handler<RET> out) {
-        this.in=in;
-        this.doing=doing;
-        this.out=out;
-    }
+    private final Handler<REQ> in=new Handler();
+    private final Dealer<RET> out=new Dealer();
     public Flow() {
-        this(new Handler(),new Versioner(),new Handler());
     }
-    public final Handleable<REQ> NeedDoing() {
-        Handleable<REQ> handleable=this.in.handleable();
-        if(this.doing.Watch(handleable.versionable)) {
-            return handleable;
+    public final REQ in_request() {
+        return this.in.result();
+    }
+    public final RET out_result() {
+        return this.out.result();
+    }
+    public final Handleable<RET> out_result_handleable() {
+        return out.result_handleable();
+    }
+    public final boolean doing() {
+        if(this.out.result_handleable().versionable.IsFallBehind(this.in.versionable())) {
+            return true;
         }
-        return null;
+        return false;
     }
     public final void AddIn(REQ req) {
         this.in.Add(req);
@@ -33,22 +34,15 @@ public class Flow<REQ,RET> {
             this.in.Add(this.in.result());
         }
     }
-    public final boolean doing() {
-        if(out.versionable().IsFallBehind(in.versionable())) {
-            return true;
+    public final Handleable<REQ> NeedDo() {
+        Handleable<REQ> req=this.in.handleable();
+        if(this.out.Watch(req)) {
+            return req;
+        } else {
+            return null;
         }
-        return false;
     }
-    public final void Out(final Handleable<RET> ret) {
-        this.out.Assign(ret);
-    }
-    public final Handleable<RET> out_handleable() {
-        return out.handleable();
-    }
-    public final REQ in_request() {
-        return in.result();
-    }
-    public final RET out_result() {
-        return out.result();
+    public final void Done(final Handleable<RET> ret) {
+        this.out.SyncDone(ret);
     }
 }

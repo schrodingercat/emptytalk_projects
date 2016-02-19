@@ -3,11 +3,13 @@ package et.naruto.elect;
 import et.naruto.base.Util.DIAG;
 import et.naruto.process.base.Processer;
 import et.naruto.process.zk.ZKProcess;
+import et.naruto.resolutionsurface.Data;
 import et.naruto.resolutionsurface.RSArgs;
 import et.naruto.resolutionsurface.ResolutionSurface;
 import et.naruto.seat.Seat;
 import et.naruto.versioner.Dealer;
 import et.naruto.versioner.base.Handleable;
+import et.naruto.versioner.base.Handler;
 
 public class Master implements Processer, AutoCloseable {
     public static class Result {
@@ -33,9 +35,22 @@ public class Master implements Processer, AutoCloseable {
     public Master(final Args args,final ZKProcess zkprocess) {
         this.args=args;
         this.pre_master_seat=new Seat(args.GetLeaderPath(),args.GetServerId(),zkprocess);
-        this.resolution_surface=new ResolutionSurface(zkprocess,new RSArgs(args.GetResolutionsPath(),args.GetServerId()));
+        final Master this_ref=this;
+        this.resolution_surface=new ResolutionSurface(zkprocess,new RSArgs(args.GetResolutionsPath(),args.GetServerId())) {
+            public Handler<Boolean> CloseingResolution(final long seq,final Data data) {
+                return this_ref.CloseingResolution(seq,data);
+            }
+        };
         this.zkprocess=zkprocess;
         zkprocess.AddProcesser(this);
+    }
+    public Handler<Boolean> CloseingResolution(final long seq,final Data data) {
+        Handler<Boolean> r=new Handler();
+        r.Add(true);
+        return r;
+    }
+    public byte[] NewResolution(final long seq,final Data data) {
+        return "test new resolution".getBytes();
     }
     public final String toString() {
         return String.format("Master[%s,%s]",this.args.toString(),this.dealer.toString());
@@ -81,6 +96,7 @@ public class Master implements Processer, AutoCloseable {
                             this.dealer.Done(new Result(true));
                         } else {
                             final long next_seq=resolution_surface_out_handleable.result.resolution.seq+1;
+                            boolean need_regist=false;
                             if(resolution_surface.in_request()!=null) {
                                 if(resolution_surface.in_request().seq<next_seq) {
                                     
@@ -89,7 +105,7 @@ public class Master implements Processer, AutoCloseable {
                                         this.args.toString(),
                                         next_seq);
                                     
-                                    this.resolution_surface.Regist(new ResolutionSurface.Request("test seq elect.master".getBytes(),next_seq));
+                                    need_regist=true;
                                 } else {
                                     if(resolution_surface.in_request().seq==next_seq) {
                                         
@@ -113,7 +129,22 @@ public class Master implements Processer, AutoCloseable {
                                     "%s First Regist next_seq %s",
                                     this.args.toString(),
                                     next_seq);
-                                this.resolution_surface.Regist(new ResolutionSurface.Request("test seq elect.master".getBytes(),next_seq));
+                                
+                                need_regist=true;
+                            }
+                            if(need_regist) {
+                                final byte[] new_resolution=NewResolution(
+                                            next_seq,
+                                            resolution_surface_out_handleable.result.resolution.data
+                                );
+                                if(new_resolution!=null) {
+                                    this.resolution_surface.Regist(
+                                        new ResolutionSurface.Request(
+                                            new_resolution,
+                                            next_seq
+                                        )
+                                    );
+                                }
                             }
                             this.dealer.Done(new Result(false));
                         }

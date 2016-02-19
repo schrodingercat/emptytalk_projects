@@ -32,11 +32,6 @@ public class Dealer<RET> {
         );
     }
     public final boolean Watch(final Versionable... versionables) {
-        for(Versionable v:versionables) {
-            if(v==result.versionable()) {
-                DIAG.Log.d.Error(toString());
-            }
-        }
         return watch.Watch(versionables);
     }
     public final boolean Watch(final Handleable... handleables) {
@@ -44,9 +39,6 @@ public class Dealer<RET> {
         int i=0;
         for(Handleable h:handleables) {
             if(h!=null) {
-                if(h==result.handleable()) {
-                    DIAG.Log.d.Error(toString());
-                }
                 vs[i]=h.versionable;
             } else {
                 vs[i]=null;

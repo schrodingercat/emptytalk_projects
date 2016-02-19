@@ -7,6 +7,7 @@ import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
 
 public class Process extends Thread {
+    private long count=0;
     private final HashSet<Processer> processers=new HashSet();
     private boolean running=false;
     private AtomicBoolean ticked=new AtomicBoolean(false);
@@ -59,19 +60,26 @@ public class Process extends Thread {
                 synchronized(this) {
                     if(!ticked.getAndSet(false)) {
                         try {
-                            this.wait(200);
+                            DIAG.Log.________________________________________________________________.D("Process Into WWWWWWWWWWWWWaitttttttttt Count(%s) !!!!!",count);
+                            this.wait();
                         } catch (Exception e) {
                             DIAG.Log.d.pass_error("",e);
                         }
                     }
                 }
             }
+            count++;
         }
     }
     public void Tick() {
+        if(Thread.currentThread().getId()==super.getId()) {
+            ticked.set(true);
+            return;
+        }
         if(ticked.getAndSet(true)) {
         } else {
             synchronized(this) {
+                DIAG.Log.________________________________________________________________.D("Process TTTTTTTTTTTicKKKKKKKKKKKKKKK from  [TID=%s] Count(%s) !!!!!",super.getId(),count);
                 this.notify();
             }
         }

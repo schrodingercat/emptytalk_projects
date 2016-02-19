@@ -10,4 +10,7 @@ public class RSArgs {
         this.path=path;
         this.token=token;
     }
+    public final String toString() {
+        return String.format("RSArgs(%s,%s)",path,token);
+    }
 }
