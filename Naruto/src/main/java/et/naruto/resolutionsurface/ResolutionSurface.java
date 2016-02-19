@@ -249,7 +249,7 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
             this.seq=seq;
         }
         public final String toString() {
-            return String.format("Request(l:%s,seq:%s)",data.length,seq);
+            return String.format("Request(l:%s,seq:%s)",data==null?null:data.length,seq);
         }
     }
     public static class Result {
@@ -305,6 +305,7 @@ public class ResolutionSurface implements Processer ,AutoCloseable {
     }
     public void Regist(final Request request) {
         this.request.Add(request);
+        this.zkprocess.Tick();
     }
     public boolean Do() {
         boolean next=false;

@@ -243,7 +243,7 @@ public class MainTest {
                 Assert.assertTrue(no_result_seq_j==length);
                 Assert.assertTrue(closed_count==length);
             } else {
-                DIAG.Log.d.info(String.format("testResolutionSurfaceSurface j is %s ,token is %s ",j,succ_rs.args.token));
+                DIAG.Log.d.info(String.format("*********************testResolutionSurfaceSurface j is %s ,token is %s*****************************",j,succ_rs.args.token));
                 Assert.assertTrue(no_result_seq_j==0);
                 Assert.assertTrue(result_seq_j==length);
                 Assert.assertTrue(succ_count==1);
