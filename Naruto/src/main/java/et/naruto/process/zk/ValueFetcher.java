@@ -39,7 +39,11 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
         }
     }
     public final String name() {
-        return Paths.get(this.request()).getFileName().toString();
+        if(this.request()!=null) {
+            return Paths.get(this.request()).getFileName().toString();
+        } else {
+            return "";
+        }
     }
     public final String toString() {
         final Result re=this.result();

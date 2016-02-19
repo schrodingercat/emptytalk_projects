@@ -2,6 +2,8 @@ package et.naruto.process.base;
 
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
@@ -10,7 +12,9 @@ public class Process extends Thread {
     private long count=0;
     private final HashSet<Processer> processers=new HashSet();
     private boolean running=false;
-    private AtomicBoolean ticked=new AtomicBoolean(false);
+    private final AtomicBoolean ticked=new AtomicBoolean(false);
+    private final ReentrantLock lock=new ReentrantLock();
+    private final Condition cond=lock.newCondition();
     public Process(final String name) {
         super("zkprocess:"+name);
     }
@@ -57,15 +61,18 @@ public class Process extends Thread {
             }
             
             if(!ticked.getAndSet(false)) {
-                synchronized(this) {
+                try {
+                    this.lock.lock();
                     if(!ticked.getAndSet(false)) {
                         try {
-                            DIAG.Log.________________________________________________________________.D("Process Into WWWWWWWWWWWWWaitttttttttt Count(%s) !!!!!",count);
-                            this.wait();
+                            DIAG.Log.________________________________________________________________.D("Process Into WWWWWWWWWWWWWaiTTTTTTTTTTTTT Count(%s) !!!!!",count);
+                            this.cond.await();
                         } catch (Exception e) {
                             DIAG.Log.d.pass_error("",e);
                         }
                     }
+                } finally {
+                    this.lock.unlock();
                 }
             }
             count++;
@@ -78,9 +85,12 @@ public class Process extends Thread {
         }
         if(ticked.getAndSet(true)) {
         } else {
-            synchronized(this) {
+            try {
+                this.lock.lock();
                 DIAG.Log.________________________________________________________________.D("Process TTTTTTTTTTTicKKKKKKKKKKKKKKK from  [TID=%s] Count(%s) !!!!!",super.getId(),count);
-                this.notify();
+                this.cond.signal();
+            } finally {
+                this.lock.unlock();
             }
         }
     }

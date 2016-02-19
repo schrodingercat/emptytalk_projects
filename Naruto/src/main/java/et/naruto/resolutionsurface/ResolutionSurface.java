@@ -216,7 +216,7 @@ class RegistHandler implements AutoCloseable, Processer {
             } else {
                 if(current_resolution_handleable.result.seq>=this.seq) {
                     DIAG.Log.________________________________________________________________.D(
-                        "%s cseq:%s arrive seq:%s, done.",
+                        "%s cseq:%s arrive seq, done.",
                         this,
                         current_resolution_handleable.result);
                     
