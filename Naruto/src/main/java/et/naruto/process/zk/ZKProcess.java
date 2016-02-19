@@ -13,7 +13,7 @@ import et.naruto.base.Util.ZKArgs;
 import et.naruto.process.base.Process;
 
 
-public class ZKProcess extends Process {
+public class ZKProcess extends Process implements AutoCloseable {
     public final ZooKeeper zk;
     public final Timer tm;
     public ZKProcess(final String name,final ZKArgs zkargs) {
@@ -24,8 +24,8 @@ public class ZKProcess extends Process {
     public void Start() {
         super.start();
     }
-    public void Stop() {
-        super.Stop();
+    public void close() {
+        super.close();
         tm.cancel();
         try {
             zk.close();

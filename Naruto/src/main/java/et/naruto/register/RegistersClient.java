@@ -5,7 +5,7 @@ import et.naruto.elect.Args;
 import et.naruto.process.zk.ZKProcess;
 import et.naruto.register.sync.RegistersSync;
 
-public class RegistersClient {
+public class RegistersClient implements AutoCloseable {
     public String toString() {
         return String.format("RegisterServer(args=%s)",args);
     }
@@ -28,9 +28,9 @@ public class RegistersClient {
     final public void Start() {
         this.zkprocess.Start();
     }
-    final public void Stop() {
-        this.zkprocess.Stop();
-        this.registers_sync.Close();
+    final public void close() {
+        this.zkprocess.close();
+        this.registers_sync.close();
     }
     
     public void DoRun() {

@@ -109,10 +109,10 @@ public class ResolutionSync implements Processer, AutoCloseable {
     }
     public void close() {
         this.zkprocess.DelProcesser(this);
-        this.resolutions_fetcher.Close();
-        this.resolutions_closed_fetcher.Close();
+        this.resolutions_fetcher.close();
+        this.resolutions_closed_fetcher.close();
         if(this.current_resolution_fetcher!=null) {
-            this.current_resolution_fetcher.Close();
+            this.current_resolution_fetcher.close();
         }
     }
     public boolean Do() {

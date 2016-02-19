@@ -35,8 +35,8 @@ public class Seat implements Processer, AutoCloseable {
         return dealer.result_handleable();
     }
     public void close() {
-        this.flag_fetcher.Close();
-        this.flag_register.Close();
+        this.flag_fetcher.close();
+        this.flag_register.close();
         this.zkprocess.DelProcesser(this);
     }
     public boolean Do() {
@@ -49,17 +49,20 @@ public class Seat implements Processer, AutoCloseable {
                     DIAG.Log.________________________________.D(
                         "Seat is empty %s request the seat.",
                         Util.Bytes2String(flag_register.request().want_value));
+                    
                     flag_register.ReRequest();
                 } else {
                     if(Arrays.equals(flag_fetcher.result_handleable().result.data,flag_register.request().want_value)) {
                         DIAG.Log.________________________________.D(
                             "%s Get the seat.",
                             Util.Bytes2String(flag_register.request().want_value));
+                        
                         this.dealer.Done(true);
                     } else {
                         DIAG.Log.________________________________.D(
                             "%s Lost the seat.",
                             Util.Bytes2String(flag_register.request().want_value));
+                        
                         this.dealer.Done(false);
                     }
                 }

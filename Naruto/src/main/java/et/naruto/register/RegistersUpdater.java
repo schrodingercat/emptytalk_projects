@@ -37,15 +37,15 @@ public abstract class RegistersUpdater implements Processer {
     }
     public void Close() {
         this.zkprocess.DelProcesser(this);
-        this.registers_register.Close();
+        this.registers_register.close();
         if(this.node_register!=null) {
-            this.node_register.Close();
+            this.node_register.close();
         }
         if(this.server_register!=null) {
-            this.server_register.Close();
+            this.server_register.close();
         }
         if(this.active_register!=null) {
-            this.active_register.Close();
+            this.active_register.close();
         }
     }
     

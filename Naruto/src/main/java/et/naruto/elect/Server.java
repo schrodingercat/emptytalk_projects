@@ -5,7 +5,7 @@ import et.naruto.process.zk.ZKProcess;
 import et.naruto.resolutionsurface.Data;
 import et.naruto.versioner.base.Handler;
 
-public class Server {
+public class Server implements AutoCloseable {
     @Override
     public String toString() {
         return String.format("FollowerServer [args=%s,f=%s]",args,master);
@@ -39,8 +39,8 @@ public class Server {
     final public void Start() {
         this.zkprocess.Start();
     }
-    final public void Stop() {
-        this.zkprocess.Stop();
+    final public void close() {
+        this.zkprocess.close();
     }
     
     public void DoRun() {

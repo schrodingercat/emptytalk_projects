@@ -9,10 +9,10 @@ import et.naruto.process.base.Processer;
 import et.naruto.versioner.Dealer;
 import et.naruto.versioner.base.Versionable;
 
-public abstract class NodeFetcher<X extends NodeFetcher.Target> implements Processer {
-    public static interface Target {
+public abstract class NodeFetcher<X extends NodeFetcher.Target> implements Processer, AutoCloseable {
+    public static interface Target extends AutoCloseable {
         public String name();
-        public void Close();
+        public void close();
     }
     private final ZKProcess zkprocess;
     public final ChildsFetcher childs_fetcher;
@@ -21,11 +21,11 @@ public abstract class NodeFetcher<X extends NodeFetcher.Target> implements Proce
         this.childs_fetcher=new ChildsFetcher(zkprocess,path);
         this.zkprocess.AddProcesser(this);
     }
-    public void Close() {
-        childs_fetcher.Close();
+    public void close() {
+        childs_fetcher.close();
         if(dealer.result()!=null) {
             for(X x:dealer.result().values()) {
-                x.Close();
+                x.close();
             }
         }
         this.zkprocess.DelProcesser(this);
@@ -72,7 +72,7 @@ public abstract class NodeFetcher<X extends NodeFetcher.Target> implements Proce
             }
         }
         for(final X ns:remove) {
-            ns.Close();
+            ns.close();
         }
         for(final String child:add) {
             leave.put(child,DoCreateX(child));

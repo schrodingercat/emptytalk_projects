@@ -21,7 +21,7 @@ public class ServerSync implements NodeFetcher.Target {
     public String name() {
         return this.name;
     }
-    public void Close() {
-        active_fetcher.Close();
+    public void close() {
+        active_fetcher.close();
     }
 }

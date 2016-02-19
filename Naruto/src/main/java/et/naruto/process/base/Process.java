@@ -8,13 +8,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import et.naruto.base.Util;
 import et.naruto.base.Util.DIAG;
 
-public class Process extends Thread {
+public class Process extends Thread implements AutoCloseable {
     private long count=0;
-    private final HashSet<Processer> processers=new HashSet();
     private boolean running=false;
     private final AtomicBoolean ticked=new AtomicBoolean(false);
     private final ReentrantLock lock=new ReentrantLock();
     private final Condition cond=lock.newCondition();
+    private final HashSet<Processer> processers=new HashSet();
     public Process(final String name) {
         super("zkprocess:"+name);
     }
@@ -29,7 +29,7 @@ public class Process extends Thread {
     public void Start() {
         super.start();
     }
-    public void Stop() {
+    public void close() {
         if(running) {
             running=false;
             this.Tick();
@@ -65,7 +65,10 @@ public class Process extends Thread {
                     this.lock.lock();
                     if(!ticked.getAndSet(false)) {
                         try {
-                            DIAG.Log.________________________________________________________________.D("Process Into WWWWWWWWWWWWWaiTTTTTTTTTTTTT Count(%s) !!!!!",count);
+                            DIAG.Log.________________________________________________________________.D(
+                                "Process Into WWWWWWWWWWWWWaiTTTTTTTTTTTTT Count(%s) !!!!!",
+                                count);
+                            
                             this.cond.await();
                         } catch (Exception e) {
                             DIAG.Log.d.pass_error("",e);
@@ -82,15 +85,21 @@ public class Process extends Thread {
         if(Thread.currentThread().getId()==super.getId()) {
             ticked.set(true);
             return;
-        }
-        if(ticked.getAndSet(true)) {
         } else {
-            try {
-                this.lock.lock();
-                DIAG.Log.________________________________________________________________.D("Process TTTTTTTTTTTicKKKKKKKKKKKKKKK from  [TID=%s] Count(%s) !!!!!",super.getId(),count);
-                this.cond.signal();
-            } finally {
-                this.lock.unlock();
+            if(ticked.getAndSet(true)) {
+            } else {
+                try {
+                    this.lock.lock();
+                    
+                    DIAG.Log.________________________________________________________________.D(
+                        "Process TTTTTTTTTTTicKKKKKKKKKKKKKKK from  [TID=%s] Count(%s) !!!!!",
+                        super.getId(),
+                        count);
+                    
+                    this.cond.signal();
+                } finally {
+                    this.lock.unlock();
+                }
             }
         }
     }

@@ -16,7 +16,7 @@ import et.naruto.versioner.base.Handler;
 
 class RegistHandler implements AutoCloseable, Processer {
     public final long seq;
-    public final byte[] byte_data;
+    private final byte[] byte_data;
     private final RSArgs args;
     private final ZKProcess zkprocess;
     private final ResolutionSync resolution_sync;
@@ -51,8 +51,8 @@ class RegistHandler implements AutoCloseable, Processer {
     }
     public void close() {
         this.zkprocess.DelProcesser(this);
-        this.closed.Close();
-        this.registed.Close();
+        this.closed.close();
+        this.registed.close();
     }
     public boolean Do() {
         boolean next=false;

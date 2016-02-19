@@ -58,7 +58,7 @@ public class MainTest {
         Util.ForceDeleteNode(process.zk,base_path);
         Util.Sleep(3*1000);
         Assert.assertTrue(vf.result().value.equals(""));
-        process.Stop();
+        process.close();
     }
     @Test
     public void testChildsFetcher() {
@@ -80,7 +80,7 @@ public class MainTest {
         Util.ForceDeleteNode(process.zk,base_path);
         Util.Sleep(3*1000);
         Assert.assertTrue(vf.result().value.equals(""));
-        process.Stop();
+        process.close();
     }
     @Test
     public void testValueRegister() {
@@ -93,7 +93,7 @@ public class MainTest {
         ValueRegister vr=new ValueRegister(process,new ValueRegister.Request(base_path,"hello",CreateMode.EPHEMERAL));
         Util.Sleep(3*1000);
         Assert.assertTrue(vf.result().value.equals("hello"));
-        process.Stop();
+        process.close();
         Util.ForceDeleteNode(process.zk,base_path);
     }
     @Test
@@ -113,8 +113,8 @@ public class MainTest {
         ServerSync server_sync=node_sync.dealer.result().get(args.server_num);
         Assert.assertTrue(server_sync!=null);
         Assert.assertTrue(server_sync.active_fetcher.result().value.equals("active_test"));
-        process.Stop();
-        nf.Close();
+        process.close();
+        nf.close();
     }
     private static int register_active_count=0;
     @Test
@@ -130,7 +130,7 @@ public class MainTest {
         process.Start();
         Util.Sleep(3*1000+30*1000);
         Assert.assertTrue(Integer.valueOf(Util.GetNodeData(zk,args.GetActivePath()),10)>0);
-        process.Stop();
+        process.close();
         nf.Close();
     }
     
@@ -170,7 +170,7 @@ public class MainTest {
             Assert.assertTrue(s.register_client.registers_sync.dealer.result().get(s.args.node_path).
                 dealer.result().get(s.args.server_num).
                     active_fetcher.result().value.equals(s.args.GetServerId()));
-            s.register_client.Stop();
+            s.register_client.close();
         }
     }
     @Test
@@ -256,7 +256,7 @@ public class MainTest {
         }
         
         
-        process.Stop();
+        process.close();
         
         for(int i=0;i<rss.size();i++) {
             rss.get(i).close();
@@ -307,7 +307,7 @@ public class MainTest {
                         i++;
                     }
                     DIAG.Log.d.info(String.format("**************************Stop the pre_leader server: %s**************************", pre_leader));
-                    pre_leader.Stop();
+                    pre_leader.close();
                     if(!pre_leader.master.IsLeader()) {
                          pure_pre_leader_count++;
                     }
@@ -316,7 +316,7 @@ public class MainTest {
             } else {
                 if(leader_count>=1) {
                     DIAG.Log.d.info(String.format("**************************Stop the leader server: %s************************", leader));
-                    leader.Stop();
+                    leader.close();
                     ss.remove(leader);
                 }
             }

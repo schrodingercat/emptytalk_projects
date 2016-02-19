@@ -6,14 +6,14 @@ import et.naruto.versioner.base.Handleable;
 import et.naruto.versioner.base.Versionable;
 
 
-public abstract class ZKProcesser<REQ,RET> implements Processer {
+public abstract class ZKProcesser<REQ,RET> implements Processer, AutoCloseable {
     private final Flow<REQ,RET> flow=new Flow();
     protected final ZKProcess zkprocess;
     public ZKProcesser(final ZKProcess zkprocess) {
         this.zkprocess=zkprocess;
         this.zkprocess.AddProcesser(this);
     }
-    public void Close() {
+    public final void close() {
         this.zkprocess.DelProcesser(this);
     }
     public final REQ request() {
