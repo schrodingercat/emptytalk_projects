@@ -2,6 +2,8 @@ package et.naruto.elect;
 
 import java.nio.file.Paths;
 
+import static et.naruto.base.Util.Path2UnixStr;
+
 public class Args {
     @Override
     public String toString() {
@@ -20,16 +22,16 @@ public class Args {
     public final String node_path;
     public final String server_num;
     public String GetLeaderPath() {
-        return Paths.get(cluster_path).resolve("Leader").toString();
+        return Path2UnixStr(Paths.get(cluster_path).resolve("Leader"));
     }
     public String GetResolutionsPath() {
-        return Paths.get(cluster_path).resolve("Resolutions").toString();
+        return Path2UnixStr(Paths.get(cluster_path).resolve("Resolutions"));
     }
     public String GetResolutionsClosedPath() {
-        return Paths.get(cluster_path).resolve("ResolutionsClosed").toString();
+        return Path2UnixStr(Paths.get(cluster_path).resolve("ResolutionsClosed"));
     }
     public String GetRegistersPath() {
-        return Paths.get(cluster_path).resolve("Registers").toString();
+        return Path2UnixStr(Paths.get(cluster_path).resolve("Registers"));
     }
     public String GetNodePath() {
         return GetRegistersPath()+"/"+node_path;

@@ -10,6 +10,8 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import et.naruto.base.Util.DIAG;
 import et.naruto.versioner.base.Handleable;
 
+import static et.naruto.base.Util.Path2UnixStr;
+
 
 public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegister.Result> {
     public static class Result {
@@ -37,7 +39,7 @@ public class ValueRegister extends ZKProcesser<ValueRegister.Request,ValueRegist
             this.mode=mode;
         }
         public String GetRegisterName() {
-            return Paths.get(this.name).getFileName().toString();
+            return Path2UnixStr(Paths.get(this.name).getFileName());
         }
     }
     public String toString() {

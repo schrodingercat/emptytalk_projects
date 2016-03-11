@@ -11,6 +11,8 @@ import org.apache.zookeeper.data.Stat;
 import et.naruto.base.Util.DIAG;
 import et.naruto.versioner.base.Handleable;
 
+import static et.naruto.base.Util.Path2UnixStr;
+
 public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
     public class Result {
         public final String path;
@@ -24,7 +26,7 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
             this.ephemeral=ephemeral;
         }
         public final String name() {
-            return Paths.get(path).getFileName().toString();
+            return Path2UnixStr(Paths.get(path).getFileName());
         }
     }
     public final boolean need_watch;
@@ -40,7 +42,7 @@ public class ValueFetcher extends ZKProcesser<String,ValueFetcher.Result> {
     }
     public final String name() {
         if(this.request()!=null) {
-            return Paths.get(this.request()).getFileName().toString();
+            return Path2UnixStr(Paths.get(this.request()).getFileName());
         } else {
             return "";
         }

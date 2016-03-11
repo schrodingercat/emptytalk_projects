@@ -2,6 +2,7 @@ package et.naruto.base;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -207,6 +208,9 @@ public class Util {
             DIAG.Log.d.pass_error("",e);
         }
     }
+    public static String Path2UnixStr(Path path) {
+        return path.toString().replace("\\","/");
+    }
     public static class ZKArgs {
         public final String connectString;
         public final long sessionTimeout=10*1000;
@@ -278,6 +282,6 @@ public class Util {
         }
     }
     public static String GetPathName(String path) {
-        return Paths.get(path).getFileName().toString();
+        return Path2UnixStr(Paths.get(path).getFileName());
     }
 }
